@@ -1,0 +1,3145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FSA Inspector Training</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f2eb;
+  --surface: #fffdf8;
+  --card: #ffffff;
+  --ink: #1a1a14;
+  --ink2: #4a4a3a;
+  --ink3: #9a9a88;
+  --rule: #e0dcd0;
+  --gold: #c8960a;
+  --gold-lt: #f5e6a8;
+  --red: #c0392b;
+  --red-lt: #fdecea;
+  --green: #1a7a3c;
+  --green-lt: #e8f5ee;
+  --blue: #1a5a8a;
+  --blue-lt: #e8f0fa;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── LAYOUT ── */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── HEADER ── */
+.header {
+  background: var(--ink);
+  color: #f5f2eb;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.header-brand h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header-tag {
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 0.15em;
+  border: 1px solid var(--gold);
+  padding: 2px 7px;
+  text-transform: uppercase;
+}
+
+.header-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 11px;
+  color: rgba(245,242,235,0.6);
+}
+
+.stat-val {
+  color: #f5f2eb;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+/* ── NAV TABS ── */
+.nav-tabs {
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  padding: 0 32px;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  padding: 14px 20px 12px;
+  border: none;
+  background: none;
+  color: var(--ink3);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active {
+  color: var(--ink);
+  border-bottom-color: var(--gold);
+  font-weight: 500;
+}
+
+/* ── MAIN ── */
+.main { flex: 1; padding: 32px; max-width: 880px; margin: 0 auto; width: 100%; }
+
+/* ── SCREENS ── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── DASHBOARD ── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.metric-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+}
+
+.metric-label {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.metric-sub { font-size: 11px; color: var(--ink3); margin-top: 4px; }
+
+.skill-bars { background: var(--card); border: 1px solid var(--rule); padding: 24px; box-shadow: var(--shadow); margin-bottom: 16px; }
+
+.skill-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.skill-bar-row:last-child { margin-bottom: 0; }
+
+.skill-name { font-size: 11px; letter-spacing: 0.05em; width: 180px; flex-shrink: 0; color: var(--ink2); }
+
+.bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--rule);
+  position: relative;
+}
+.bar-fill {
+  height: 100%;
+  background: var(--gold);
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.bar-fill.green { background: var(--green); }
+.bar-fill.blue { background: var(--blue); }
+
+.skill-pct { font-size: 11px; width: 36px; text-align: right; color: var(--ink3); }
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.weak-list { background: var(--card); border: 1px solid var(--rule); padding: 0; box-shadow: var(--shadow); }
+.weak-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.weak-item:last-child { border-bottom: none; }
+.weak-item:hover { background: var(--bg); }
+.weak-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: var(--red-lt);
+  color: var(--red);
+  white-space: nowrap;
+}
+.weak-text { flex: 1; color: var(--ink2); }
+.weak-cat { font-size: 10px; color: var(--ink3); letter-spacing: 0.08em; }
+
+/* ── QUIZ CARD ── */
+.quiz-wrap { max-width: 720px; margin: 0 auto; }
+
+.quiz-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.quiz-meta-left { display: flex; gap: 10px; align-items: center; }
+
+.cat-badge {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+  color: var(--ink3);
+}
+
+.cat-badge.fsa { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); }
+.cat-badge.english { border-color: var(--gold); color: var(--gold); background: var(--gold-lt); }
+.cat-badge.pressure { border-color: var(--red); color: var(--red); background: var(--red-lt); }
+
+.diff-dots { display: flex; gap: 4px; }
+.diff-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--rule); }
+.diff-dot.on { background: var(--gold); }
+
+.quiz-progress-text { font-size: 11px; color: var(--ink3); }
+
+.progress-track {
+  height: 3px;
+  background: var(--rule);
+  margin-bottom: 28px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--gold);
+  transition: width 0.4s ease;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-lg);
+  padding: 36px 40px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  animation: cardIn 0.3s ease;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gold);
+}
+
+.card.pressure::before { background: var(--red); }
+.card.english-card::before { background: var(--blue); }
+
+.inspector-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 16px;
+}
+
+.inspector-icon {
+  width: 28px; height: 28px;
+  background: var(--ink);
+  color: #f5f2eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.question-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--ink);
+  margin-bottom: 28px;
+}
+
+.context-box {
+  background: var(--bg);
+  border-left: 3px solid var(--gold);
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.7;
+}
+
+.options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+
+.option-btn {
+  background: var(--surface);
+  border: 1.5px solid var(--rule);
+  padding: 16px 20px;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.55;
+  transition: all 0.15s;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.option-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  background: var(--card);
+  color: var(--ink);
+}
+
+.option-btn.selected-correct {
+  border-color: var(--green);
+  background: var(--green-lt);
+  color: var(--green);
+}
+
+.option-btn.selected-wrong {
+  border-color: var(--red);
+  background: var(--red-lt);
+  color: var(--red);
+}
+
+.option-btn.show-correct {
+  border-color: var(--green);
+  background: var(--green-lt);
+  color: var(--green);
+}
+
+.option-key {
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  border: 1px solid var(--rule);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease;
+  display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct { border-color: var(--green); background: var(--green-lt); }
+.feedback.wrong { border-color: var(--red); background: var(--red-lt); }
+
+.feedback-verdict {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.feedback.correct .feedback-verdict { color: var(--green); }
+.feedback.wrong .feedback-verdict { color: var(--red); }
+
+.feedback-why { font-size: 13px; color: var(--ink2); line-height: 1.7; }
+
+.key-phrase {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.6);
+  border-left: 3px solid currentColor;
+}
+.key-phrase-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; margin-bottom: 6px; }
+.key-phrase-text { font-size: 13px; font-weight: 500; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── VOICE CONTROLS ── */
+.voice-bar {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  font-size: 11px;
+  color: var(--ink3);
+}
+
+.voice-btn {
+  background: none;
+  border: 1px solid var(--rule);
+  padding: 7px 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--ink2);
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.voice-btn:hover { border-color: var(--ink); color: var(--ink); }
+.voice-btn.active { border-color: var(--green); color: var(--green); background: var(--green-lt); }
+.voice-btn.recording { border-color: var(--red); color: var(--red); background: var(--red-lt); animation: blink 1s ease infinite; }
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.voice-select {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 6px 8px;
+  color: var(--ink2);
+  max-width: 180px;
+  cursor: pointer;
+}
+
+.mic-transcript {
+  flex: 1;
+  font-size: 12px;
+  color: var(--ink3);
+  font-style: italic;
+  min-height: 20px;
+}
+
+/* ── FILL BLANK ── */
+.blank-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.8;
+  color: var(--ink);
+  margin-bottom: 24px;
+}
+
+.blank {
+  display: inline-block;
+  min-width: 120px;
+  border-bottom: 2px solid var(--gold);
+  padding: 0 4px;
+  color: var(--gold);
+  font-style: italic;
+}
+
+/* ── ACTION BUTTONS ── */
+.action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn {
+  padding: 11px 24px;
+  border: 1.5px solid var(--ink);
+  background: none;
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.btn:hover { background: var(--ink); color: #f5f2eb; }
+.btn.primary { background: var(--ink); color: #f5f2eb; }
+.btn.primary:hover { background: #333; }
+.btn.gold { border-color: var(--gold); color: var(--gold); }
+.btn.gold:hover { background: var(--gold); color: #fff; }
+.btn.sm { padding: 7px 14px; font-size: 10px; }
+
+/* ── RESULT OVERLAY ── */
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,20,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  display: none;
+}
+.result-overlay.show { display: flex; }
+
+.result-card {
+  background: var(--card);
+  padding: 48px 56px;
+  max-width: 480px;
+  width: 90%;
+  text-align: center;
+  animation: resultIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes resultIn {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.result-grade {
+  font-family: 'Syne', sans-serif;
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.result-label { font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink3); margin-bottom: 24px; }
+
+.result-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.result-item {
+  background: var(--bg);
+  padding: 16px;
+  text-align: left;
+}
+.result-item-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 4px; }
+.result-item-val { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; }
+
+/* ── SETTINGS ── */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.setting-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  padding: 24px;
+}
+.setting-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 12px; }
+.setting-select, .setting-range {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 8px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--ink);
+}
+.setting-range { accent-color: var(--gold); padding: 4px 0; }
+
+/* ── UTILS ── */
+.flag-btn {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+}
+.flag-btn:hover { opacity: 1; }
+.flag-btn.flagged { opacity: 1; }
+
+.divider { border: none; border-top: 1px solid var(--rule); margin: 24px 0; }
+
+/* ── LOGIN SCREEN ── */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  transition: opacity 0.4s ease;
+}
+.login-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.login-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-lg);
+  padding: 48px 52px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  animation: cardIn 0.4s ease;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gold);
+}
+
+.login-brand {
+  margin-bottom: 8px;
+}
+
+.login-brand h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.login-brand .login-sub {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  display: inline-block;
+  padding: 2px 7px;
+  margin-top: 6px;
+}
+
+.login-divider {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 20px 0 28px;
+}
+
+.login-field {
+  margin-bottom: 18px;
+}
+
+.login-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 8px;
+}
+
+.login-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 12px 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.login-input:focus {
+  border-color: var(--gold);
+}
+.login-input.error {
+  border-color: var(--red);
+  background: var(--red-lt);
+}
+
+.login-error {
+  font-size: 11px;
+  color: var(--red);
+  margin-top: 4px;
+  display: none;
+  letter-spacing: 0.05em;
+}
+.login-error.show { display: block; }
+
+.login-btn {
+  width: 100%;
+  padding: 13px;
+  background: var(--ink);
+  color: #f5f2eb;
+  border: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s;
+}
+.login-btn:hover { background: #333; }
+.login-btn:active { background: #555; }
+
+.login-footer {
+  margin-top: 20px;
+  font-size: 10px;
+  color: var(--ink3);
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div class="login-brand">
+      <h2>FSA Inspector</h2>
+      <span class="login-sub">Training — Restricted Access</span>
+    </div>
+    <hr class="login-divider">
+
+    <div class="login-field">
+      <label class="login-label" for="login-id">ユーザーID / User ID</label>
+      <input class="login-input" type="text" id="login-id" placeholder="Enter your ID" autocomplete="username" />
+    </div>
+
+    <div class="login-field">
+      <label class="login-label" for="login-pw">パスワード / Password</label>
+      <input class="login-input" type="password" id="login-pw" placeholder="Enter your password" autocomplete="current-password" />
+      <div class="login-error" id="login-error">IDまたはパスワードが正しくありません。</div>
+    </div>
+
+    <button class="login-btn" id="login-btn" onclick="doLogin()">ログイン / Sign In →</button>
+
+    <div class="login-footer">このツールは内部利用限定です。 &nbsp;|&nbsp; Internal use only.</div>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none;">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <h1>FSA Inspector</h1>
+    <span class="header-tag">Training</span>
+  </div>
+  <div class="header-stats">
+    <div>Session Score <span class="stat-val" id="hdr-score">—</span></div>
+    <div>Streak <span class="stat-val" id="hdr-streak">0</span> 🔥</div>
+    <div>Level <span class="stat-val" id="hdr-level">—</span></div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav-tabs">
+  <button class="tab-btn active" data-screen="dashboard">📊 Dashboard</button>
+  <button class="tab-btn" data-screen="quiz">🎯 Quiz</button>
+  <button class="tab-btn" data-screen="fill">✏️ Fill in Blank</button>
+  <button class="tab-btn" data-screen="settings">⚙️ Settings</button>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <div class="screen active" id="screen-dashboard">
+    <div class="section-title">Performance Overview</div>
+    <div class="dash-grid">
+      <div class="metric-card">
+        <div class="metric-label">Total Correct</div>
+        <div class="metric-value" id="dash-correct">0</div>
+        <div class="metric-sub" id="dash-total">of 0 answered</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Best Streak</div>
+        <div class="metric-value" id="dash-streak">0</div>
+        <div class="metric-sub">consecutive correct</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Mastery Level</div>
+        <div class="metric-value" id="dash-level" style="font-size:22px;padding-top:8px;">Beginner</div>
+        <div class="metric-sub" id="dash-next">Start to advance</div>
+      </div>
+    </div>
+
+    <div class="section-title">Skill Breakdown</div>
+    <div class="skill-bars">
+      <div class="skill-bar-row">
+        <div class="skill-name">FSA Response Language</div>
+        <div class="bar-track"><div class="bar-fill" id="bar-fsa" style="width:0%"></div></div>
+        <div class="skill-pct" id="pct-fsa">0%</div>
+      </div>
+      <div class="skill-bar-row">
+        <div class="skill-name">Governance / Oversight</div>
+        <div class="bar-track"><div class="bar-fill blue" id="bar-gov" style="width:0%"></div></div>
+        <div class="skill-pct" id="pct-gov">0%</div>
+      </div>
+      <div class="skill-bar-row">
+        <div class="skill-name">Evidence Presentation</div>
+        <div class="bar-track"><div class="bar-fill" id="bar-ev" style="width:0%"></div></div>
+        <div class="skill-pct" id="pct-ev">0%</div>
+      </div>
+      <div class="skill-bar-row">
+        <div class="skill-name">Pressure Handling</div>
+        <div class="bar-track"><div class="bar-fill green" id="bar-pr" style="width:0%"></div></div>
+        <div class="skill-pct" id="pct-pr">0%</div>
+      </div>
+      <div class="skill-bar-row">
+        <div class="skill-name">Cross-border Conflict</div>
+        <div class="bar-track"><div class="bar-fill blue" id="bar-cb" style="width:0%"></div></div>
+        <div class="skill-pct" id="pct-cb">0%</div>
+      </div>
+    </div>
+
+    <div class="section-title">Flagged for Review</div>
+    <div class="weak-list" id="weak-list">
+      <div class="weak-item" style="color:var(--ink3);cursor:default">No items flagged yet. Flag difficult questions during quiz.</div>
+    </div>
+
+    <hr class="divider">
+    <div class="action-row">
+      <button class="btn primary" onclick="switchScreen('quiz')">Start Quiz →</button>
+      <button class="btn" onclick="resetProgress()">Reset Progress</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div class="quiz-wrap">
+      <div class="quiz-meta">
+        <div class="quiz-meta-left">
+          <span class="cat-badge" id="q-cat-badge">FSA</span>
+          <div class="diff-dots" id="q-diff">
+            <div class="diff-dot on"></div>
+            <div class="diff-dot"></div>
+            <div class="diff-dot"></div>
+          </div>
+        </div>
+        <div class="quiz-progress-text" id="q-progress">Q 1 / 15</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="q-prog-fill" style="width:0%"></div></div>
+
+      <!-- Voice bar -->
+      <div class="voice-bar">
+        <button class="voice-btn" id="btn-tts" onclick="toggleTTS()">🔊 Read aloud</button>
+        <button class="voice-btn" id="btn-mic" onclick="toggleMic()">🎤 Speak answer</button>
+        <span class="mic-transcript" id="mic-transcript">—</span>
+        <select class="voice-select" id="voice-select"></select>
+      </div>
+
+      <div class="card" id="quiz-card">
+        <button class="flag-btn" id="flag-btn" title="Flag for review" onclick="toggleFlag()">🚩</button>
+        <div class="inspector-badge">
+          <div class="inspector-icon">👔</div>
+          <span id="q-inspector-label">FSA Inspector</span>
+        </div>
+        <div class="context-box" id="q-context" style="display:none"></div>
+        <div class="question-text" id="q-text">Loading…</div>
+        <div class="options" id="q-options"></div>
+      </div>
+
+      <div class="feedback" id="q-feedback">
+        <div class="feedback-verdict" id="fb-verdict"></div>
+        <div class="feedback-why" id="fb-why"></div>
+        <div class="key-phrase" id="fb-phrase"></div>
+      </div>
+
+      <div class="action-row" id="q-actions">
+        <button class="btn primary" id="btn-next-q" onclick="nextQuestion()" style="display:none">Next Question →</button>
+        <button class="btn" onclick="switchScreen('dashboard')">Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILL IN BLANK -->
+  <div class="screen" id="screen-fill">
+    <div class="quiz-wrap">
+      <div class="quiz-meta">
+        <span class="cat-badge english">English Phrase</span>
+        <div class="quiz-progress-text" id="fill-progress">1 / 12</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="fill-prog-fill" style="width:0%"></div></div>
+
+      <div class="voice-bar">
+        <button class="voice-btn" id="btn-fill-tts" onclick="toggleFillTTS()">🔊 Hear sentence</button>
+        <button class="voice-btn" id="btn-fill-mic" onclick="toggleFillMic()">🎤 Speak answer</button>
+        <span class="mic-transcript" id="fill-mic-transcript">—</span>
+      </div>
+
+      <div class="card">
+        <button class="flag-btn" id="fill-flag-btn" onclick="toggleFillFlag()">🚩</button>
+        <div class="inspector-badge">
+          <div class="inspector-icon">✏️</div>
+          <span>Complete the FSA response phrase</span>
+        </div>
+        <div class="blank-text" id="fill-text">Loading…</div>
+        <div class="options" id="fill-options"></div>
+      </div>
+
+      <div class="feedback" id="fill-feedback">
+        <div class="feedback-verdict" id="fill-fb-verdict"></div>
+        <div class="feedback-why" id="fill-fb-why"></div>
+      </div>
+
+      <div class="action-row" style="margin-top:12px;">
+        <button class="btn" id="btn-next-fill" onclick="nextFill()" style="display:none">Next →</button>
+        <button class="btn sm gold" onclick="showFillHint()">Hint</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="section-title">Settings</div>
+    <div class="settings-grid">
+      <div class="setting-card">
+        <div class="setting-label">Quiz Mode</div>
+        <select class="setting-select" id="set-mode">
+          <option value="all">All questions</option>
+          <option value="weak">Flagged only</option>
+          <option value="fsa">FSA scenarios only</option>
+          <option value="english">English phrases only</option>
+        </select>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Voice Speed</div>
+        <input type="range" class="setting-range" id="set-rate" min="0.6" max="1.6" step="0.1" value="0.9">
+        <div style="font-size:11px;color:var(--ink3);margin-top:8px;" id="set-rate-label">0.9×</div>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Auto-read Questions</div>
+        <select class="setting-select" id="set-autoread">
+          <option value="0">Off</option>
+          <option value="1">On</option>
+        </select>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Show Japanese Hints</div>
+        <select class="setting-select" id="set-ja">
+          <option value="0">Off</option>
+          <option value="1">On (after answer)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- RESULT OVERLAY (inside main-app) -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <div class="result-grade" id="res-grade">—</div>
+    <div class="result-label" id="res-label">Quiz Complete</div>
+    <div class="result-breakdown">
+      <div class="result-item"><div class="result-item-label">Correct</div><div class="result-item-val" id="res-correct">0</div></div>
+      <div class="result-item"><div class="result-item-label">Wrong</div><div class="result-item-val" id="res-wrong">0</div></div>
+      <div class="result-item"><div class="result-item-label">Best Streak</div><div class="result-item-val" id="res-streak">0</div></div>
+      <div class="result-item"><div class="result-item-label">Level</div><div class="result-item-val" id="res-level">—</div></div>
+    </div>
+    <div class="action-row" style="justify-content:center;">
+      <button class="btn primary" onclick="closeResult()">Continue</button>
+      <button class="btn" onclick="restartQuiz()">Retry</button>
+    </div>
+  </div>
+</div>
+<!-- /main-app -->
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════
+const QUESTIONS = [
+  // ── ORIGINAL 15 ──────────────────────────────────────────────
+  {
+    id: 1, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: 'mm Securities is under inspection.',
+    q: 'How do you monitor security logs?',
+    opts: [
+      'Our engineers check logs when there is a problem.',
+      'Security logs are collected centrally and monitored regularly. Alerts are generated for suspicious activity.'
+    ],
+    correct: 1,
+    why: 'The FSA expects continuous monitoring, not reactive checking. Centralized collection + regular monitoring + alerting demonstrates operational maturity.',
+    phrase: '"Security logs are collected centrally and monitored regularly."',
+    tags: ['fsa','evidence'],
+    jaHint: '継続的な監視体制があることを示す。問題発生後に見るのではなく、常時監視が前提。'
+  },
+  {
+    id: 2, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: 'Do you outsource any security or IT operations outside Japan?',
+    opts: [
+      'Yes, some systems are supported by our China security team. We have governance, contracts, and access control.',
+      'Yes, our China team manages most systems.'
+    ],
+    correct: 0,
+    why: 'The FSA focuses on governance and control, not just location. Mentioning governance, contracts, and access control shows you manage the risk properly.',
+    phrase: '"We have governance, contracts, and access control."',
+    tags: ['fsa','governance','cross-border'],
+    jaHint: '委託先の管理体制（ガバナンス・契約・アクセス管理）を具体的に示す。'
+  },
+  {
+    id: 3, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: 'If a serious security incident happens, what is your process?',
+    opts: [
+      'We investigate first and report later if needed.',
+      'We follow an incident response process. Critical incidents are reported to management and regulators according to Japan requirements.'
+    ],
+    correct: 1,
+    why: 'The FSA requires a formal, documented process with regulatory reporting. Saying "if needed" suggests no clear process exists.',
+    phrase: '"…reported to management and regulators according to Japan requirements."',
+    tags: ['fsa','incident'],
+    jaHint: 'インシデント対応は、調査完了を待たず速やかに報告する義務がある。'
+  },
+  {
+    id: 4, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: 'How do you control administrator access to critical systems?',
+    opts: [
+      'Only senior engineers have administrator access.',
+      'Administrator access is restricted, approved, logged, and regularly reviewed.'
+    ],
+    correct: 1,
+    why: 'The FSA wants the four pillars: restriction, approval, logging, and review. "Senior engineers only" lacks governance structure.',
+    phrase: '"Restricted, approved, logged, and regularly reviewed."',
+    tags: ['fsa','evidence','access'],
+    jaHint: '管理者権限は：最小権限・承認プロセス・ログ・定期レビューの4点セットで説明する。'
+  },
+  {
+    id: 5, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector is skeptical.',
+    q: '"I hear some security monitoring is handled by your China team. How can you ensure proper control in Japan?"',
+    opts: [
+      'Our China team manages everything. They are very experienced.',
+      'Operations may involve the China team, but governance, policy, and oversight are controlled by our Japan entity.'
+    ],
+    correct: 1,
+    why: 'Under pressure, emphasize Japan-side governance. The regulator needs to know the Japan entity is accountable — not a foreign HQ.',
+    phrase: '"Governance, policy, and oversight are controlled by our Japan entity."',
+    tags: ['fsa','pressure','cross-border'],
+    jaHint: '監督責任は日本法人にある、と明確に言い切ることが重要。'
+  },
+  {
+    id: 6, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: '',
+    q: '"Your monitoring looks limited. Are you sure this control is sufficient?"',
+    opts: [
+      'Yes, it is fine.',
+      'Thank you for the feedback. We are reviewing improvements and can share our enhancement plan.'
+    ],
+    correct: 1,
+    why: 'Never argue with an FSA inspector. Acknowledge → show improvement attitude. This signals a healthy compliance culture.',
+    phrase: '"We are reviewing improvements and can share our enhancement plan."',
+    tags: ['fsa','pressure'],
+    jaHint: '検査官に反論しない。改善意欲を示すことが正しい姿勢。'
+  },
+  {
+    id: 7, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Who makes the final security decision if Japan and HQ disagree?"',
+    opts: [
+      'HQ makes all final decisions.',
+      'For Japan regulatory matters, the Japan entity and CISO make the final decision.'
+    ],
+    correct: 1,
+    why: 'For Japan-regulated matters, local authority must be clear. "HQ decides all" is a red flag for regulators reviewing foreign financial firms.',
+    phrase: '"For Japan regulatory matters, the Japan entity and CISO make the final decision."',
+    tags: ['fsa','governance','cross-border'],
+    jaHint: '日本の規制事項における最終意思決定は日本法人にある、と明言する。'
+  },
+  {
+    id: 8, cat: 'evidence', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Can you show evidence of your last access review?"',
+    opts: [
+      'I will try to find it later.',
+      'Yes. We keep records of our periodic access reviews. I can provide the documentation.'
+    ],
+    correct: 1,
+    why: '"I will try to find it later" signals poor document management. You must be ready to produce evidence on-demand during inspections.',
+    phrase: '"We keep records… I can provide the documentation."',
+    tags: ['fsa','evidence'],
+    jaHint: 'エビデンスはいつでも提出できる状態にしておく必要がある。'
+  },
+  {
+    id: 9, cat: 'evidence', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Please show the last security incident report."',
+    opts: [
+      'Yes. We maintain incident reports and can provide the latest report and response summary.',
+      'We rarely have incidents, so we do not keep detailed reports.'
+    ],
+    correct: 0,
+    why: '"Rarely have incidents" is not a reason to skip documentation. The FSA expects documented proof of every incident, regardless of severity.',
+    phrase: '"We maintain incident reports and can provide the latest report."',
+    tags: ['fsa','evidence','incident'],
+    jaHint: 'インシデントが少なくても、発生したものは全て記録・文書化が必要。'
+  },
+  {
+    id: 10, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Who is responsible if a serious security incident happens?"',
+    opts: [
+      'The security team handles it.',
+      'Responsibility is defined in our governance structure. The security team manages response, and the responsible executive oversees the risk.'
+    ],
+    correct: 1,
+    why: '"The security team handles it" lacks executive accountability. The FSA needs to see escalation paths and executive ownership of risk.',
+    phrase: '"Responsibility is defined in our governance structure… the responsible executive oversees the risk."',
+    tags: ['fsa','governance'],
+    jaHint: 'インシデントの最終責任は経営層にある。ガバナンス構造を説明する。'
+  },
+  {
+    id: 11, cat: 'cross-border', diff: 2,
+    inspector: 'Japan CISO + China Team Conflict',
+    context: 'Japan CISO: "We must follow Japan regulation first." China team: "We should follow our global standard."',
+    q: 'What should you say to align both sides?',
+    opts: [
+      '"Japan regulation must come first for the inspection."',
+      '"Let\'s check which requirement is mandatory for the FSA and align both sides on facts."'
+    ],
+    correct: 1,
+    why: 'Leading with facts and evidence avoids a power struggle. Asking "what is mandatory" frames the discussion around compliance, not opinion.',
+    phrase: '"Let\'s align both sides on facts — what is mandatory for the FSA."',
+    tags: ['cross-border','governance'],
+    jaHint: '意見対立は、事実（規制要件）を基準に解決する。意見ではなく根拠で話す。'
+  },
+  {
+    id: 12, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'China team: "Changing the system now is difficult." Japan CISO: "FSA inspection is next week."',
+    q: 'What is the best response?',
+    opts: [
+      '"Let\'s explain the current control and prepare a mitigation plan for the FSA."',
+      '"Let\'s delay the discussion until after the inspection."'
+    ],
+    correct: 0,
+    why: 'Regulators accept transparent explanations with improvement plans. Delaying shows weak governance and creates a worse impression during inspection.',
+    phrase: '"Explain the current control and prepare a mitigation plan."',
+    tags: ['cross-border','fsa','pressure'],
+    jaHint: '検査直前でも「現状の説明＋改善計画」を準備する。先送りは評価を下げる。'
+  },
+  {
+    id: 13, cat: 'english', diff: 1,
+    inspector: 'English Phrase Practice',
+    context: 'FSA inspector asks about your escalation process.',
+    q: 'Which sentence best demonstrates a formal escalation process to an FSA inspector?',
+    opts: [
+      '"We tell the manager when things go wrong."',
+      '"Critical issues are escalated to senior management with documented facts and risk assessment."'
+    ],
+    correct: 1,
+    why: 'Formal English with "escalated," "documented," and "risk assessment" signals a mature process. Vague language weakens credibility.',
+    phrase: '"Escalated to senior management with documented facts and risk assessment."',
+    tags: ['english','fsa'],
+    jaHint: '「エスカレーション」には文書化・事実・リスク評価の三要素を含める。'
+  },
+  {
+    id: 14, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'You need to respond to a regulator who questions your overseas access controls.',
+    q: 'Which phrase shows accountability and control?',
+    opts: [
+      '"Overseas access is controlled. I think it should be fine."',
+      '"Overseas access is restricted, requires management approval, and all access is logged and monitored."'
+    ],
+    correct: 1,
+    why: '"I think it should be fine" signals uncertainty. Regulators need specific, confident language: restricted, approval, logged, monitored.',
+    phrase: '"Restricted… management approval… logged and monitored."',
+    tags: ['english','fsa','evidence'],
+    jaHint: '「大丈夫だと思います」は絶対NG。具体的な統制手段を明示する。'
+  },
+  {
+    id: 15, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Final)',
+    context: 'The inspector says: "Where are your security logs physically stored?"',
+    q: 'What is the correct answer?',
+    opts: [
+      '"Logs are stored in our global cloud. I\'m not sure about the exact location."',
+      '"Security logs are stored in our centralized logging system. Storage location and access are controlled according to our security policy."'
+    ],
+    correct: 1,
+    why: '"Not sure" is dangerous. Centralized, policy-governed log storage shows you understand where data lives and who controls access — critical for FSA.',
+    phrase: '"Storage location and access are controlled according to our security policy."',
+    tags: ['fsa','evidence','pressure'],
+    jaHint: 'ログの保存場所は即答できる必要がある。「わからない」はNG。'
+  },
+
+  // ── EXPANSION BATCH 2 (ids 16–30) ────────────────────────────
+  {
+    id: 16, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: 'mm Securities is under inspection.',
+    q: 'How do you manage patch management for critical systems?',
+    opts: [
+      'We apply patches when a system becomes unstable.',
+      'We have a patch management process. Critical patches are assessed, tested, and applied within defined timeframes.'
+    ],
+    correct: 1,
+    why: 'The FSA expects a systematic, risk-based patch process with defined timelines — not reactive patching after problems emerge.',
+    phrase: '"Patches are assessed, tested, and applied within defined timeframes."',
+    tags: ['fsa','evidence'],
+    jaHint: 'パッチ管理は「リスク評価→テスト→期限内適用」のプロセスを説明する。'
+  },
+  {
+    id: 17, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you ensure third-party vendors meet your security requirements?"',
+    opts: [
+      'We trust our vendors because they are well-known companies.',
+      'Vendors are assessed before engagement, contractually bound to our security requirements, and periodically reviewed.'
+    ],
+    correct: 1,
+    why: 'Trust alone is insufficient. The FSA expects pre-engagement assessment, contractual obligations, and ongoing review — the full vendor risk lifecycle.',
+    phrase: '"Assessed before engagement, contractually bound, and periodically reviewed."',
+    tags: ['fsa','governance'],
+    jaHint: 'ベンダー管理は「事前評価・契約・定期レビュー」の3サイクルで説明する。'
+  },
+  {
+    id: 18, cat: 'evidence', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Please describe your business continuity plan for a major cyber attack."',
+    opts: [
+      'We would work hard to recover as quickly as possible.',
+      'We maintain a documented BCP and DR plan. Recovery time objectives are defined and tested through regular drills.'
+    ],
+    correct: 1,
+    why: '"Work hard" is not a plan. The FSA requires documented RTOs, tested DR procedures, and evidence of drills.',
+    phrase: '"RTO is defined and tested through regular drills."',
+    tags: ['fsa','evidence'],
+    jaHint: 'BCPはRTO・DR手順・訓練実施の証跡をセットで説明する。'
+  },
+  {
+    id: 19, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: 'How do you handle employee offboarding from a security perspective?',
+    opts: [
+      'We ask the employee to return their laptop when they leave.',
+      'Upon termination, all system access is revoked immediately, equipment is retrieved, and accounts are deactivated per our offboarding checklist.'
+    ],
+    correct: 1,
+    why: 'Offboarding must be immediate and documented. The FSA expects a systematic process covering access revocation, asset recovery, and account deactivation.',
+    phrase: '"Access is revoked immediately… per our offboarding checklist."',
+    tags: ['fsa','access'],
+    jaHint: '退職者対応はアクセス即時停止・機器回収・アカウント無効化をチェックリストで実施。'
+  },
+  {
+    id: 20, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector challenges you directly.',
+    q: '"We found several unpatched vulnerabilities in your last audit. What have you done since then?"',
+    opts: [
+      'We are still working on it. It is difficult with our current resources.',
+      'Following the audit, we developed a remediation plan with prioritized timelines. I can provide the current status and evidence of completed items.'
+    ],
+    correct: 1,
+    why: 'Acknowledging the gap and showing a structured remediation plan with evidence demonstrates accountability and progress — key signals for the FSA.',
+    phrase: '"Remediation plan with prioritized timelines… I can provide evidence of completed items."',
+    tags: ['fsa','pressure','evidence'],
+    jaHint: '指摘事項には「改善計画・優先順位・完了証跡」を示す。言い訳より実績で答える。'
+  },
+  {
+    id: 21, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you protect customer data from internal threats?"',
+    opts: [
+      'We trust our employees. They sign a confidentiality agreement.',
+      'We apply least-privilege access, monitor data access logs, and conduct periodic access reviews to detect anomalies.'
+    ],
+    correct: 1,
+    why: 'Trust and NDA alone are insufficient. The FSA expects technical controls: least privilege, access logging, and anomaly detection.',
+    phrase: '"Least-privilege access, monitored logs, and periodic access reviews."',
+    tags: ['fsa','access','evidence'],
+    jaHint: '内部脅威対策は「最小権限・ログ監視・定期レビュー」の技術的統制で説明する。'
+  },
+  {
+    id: 22, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'HQ mandates a global security tool that does not meet Japan data residency requirements.',
+    q: 'What is the correct response to HQ?',
+    opts: [
+      '"We will implement it as instructed by HQ."',
+      '"We need to assess the tool against Japan\'s data residency requirements before deployment. We will propose a compliant solution."'
+    ],
+    correct: 1,
+    why: 'Blind compliance with HQ can create FSA violations. Local regulatory requirements must be evaluated before implementing any global tool.',
+    phrase: '"Assess against Japan\'s data residency requirements before deployment."',
+    tags: ['cross-border','fsa','governance'],
+    jaHint: 'グローバルツールの導入前に日本のデータ所在地要件を確認する義務がある。'
+  },
+  {
+    id: 23, cat: 'english', diff: 1,
+    inspector: 'English Phrase Practice',
+    context: 'The FSA asks you to describe your vulnerability management program.',
+    q: 'Which answer best describes a mature vulnerability management program?',
+    opts: [
+      '"We fix critical issues quickly when we find them."',
+      '"Vulnerabilities are identified, risk-rated, tracked, and remediated within defined SLAs based on severity."'
+    ],
+    correct: 1,
+    why: '"Risk-rated," "tracked," and "SLAs" signal a formal, measurable process. The first answer sounds reactive and unstructured.',
+    phrase: '"Identified, risk-rated, tracked, and remediated within defined SLAs."',
+    tags: ['english','fsa'],
+    jaHint: '脆弱性管理は「特定・リスク評価・追跡・SLA内対応」の4ステップで表現する。'
+  },
+  {
+    id: 24, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How often do you conduct security awareness training for employees?"',
+    opts: [
+      'New employees receive training when they join.',
+      'All employees receive annual security awareness training, and additional targeted training is provided when new threats emerge.'
+    ],
+    correct: 1,
+    why: 'One-time onboarding training is insufficient. The FSA expects ongoing, documented training programs with evidence of completion.',
+    phrase: '"Annual training plus targeted training when new threats emerge."',
+    tags: ['fsa','evidence'],
+    jaHint: 'セキュリティ教育は「年次実施＋脅威変化に応じた追加訓練」をセットで説明する。'
+  },
+  {
+    id: 25, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector is persistent.',
+    q: '"Your incident response time seems slow. Can you justify this?"',
+    opts: [
+      '"Our team is small. We do our best."',
+      '"Thank you for raising this. Our current RTO is defined in our IRP. We have identified the gap and are implementing improvements to reduce response time."'
+    ],
+    correct: 1,
+    why: 'Explaining the constraint without a plan looks weak. Acknowledging the gap + showing a defined target + improvement action is the FSA-preferred response.',
+    phrase: '"Gap identified… implementing improvements to reduce response time."',
+    tags: ['fsa','pressure','incident'],
+    jaHint: '対応時間の遅延は「現状のRTO・ギャップ認識・改善措置」をセットで答える。'
+  },
+  {
+    id: 26, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"What encryption standards do you apply to sensitive customer data?"',
+    opts: [
+      'Our systems use encryption.',
+      'Sensitive customer data is encrypted at rest and in transit using industry-standard algorithms. Encryption policies are documented and reviewed annually.'
+    ],
+    correct: 1,
+    why: '"Uses encryption" is too vague. The FSA expects specifics: at rest, in transit, standard algorithms, and documented policy.',
+    phrase: '"Encrypted at rest and in transit using industry-standard algorithms."',
+    tags: ['fsa','evidence'],
+    jaHint: '暗号化は「保存時・転送時・標準アルゴリズム・ポリシー文書化」を具体的に答える。'
+  },
+  {
+    id: 27, cat: 'evidence', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you document risk decisions when you accept a known vulnerability?"',
+    opts: [
+      'The team decides internally and moves on.',
+      'Risk acceptance decisions are documented with justification, owner, expiry date, and approved by the relevant authority.'
+    ],
+    correct: 1,
+    why: 'Risk acceptance without documentation is a governance failure. The FSA expects formal records with accountability, justification, and expiry.',
+    phrase: '"Documented with justification, owner, expiry date, and approved by the relevant authority."',
+    tags: ['fsa','evidence','governance'],
+    jaHint: 'リスク受容は「理由・所有者・期限・承認者」を文書化して残す。'
+  },
+  {
+    id: 28, cat: 'cross-border', diff: 3,
+    inspector: 'Cross-border Scenario',
+    context: 'HQ requests raw access log data be sent to China servers for centralized analysis.',
+    q: 'What is your response?',
+    opts: [
+      '"We will transfer the data as requested."',
+      '"We need to review this against Japan\'s FISC guidelines and applicable data protection requirements before any cross-border data transfer."'
+    ],
+    correct: 1,
+    why: 'Cross-border data transfers for financial firms in Japan require careful review against FISC and applicable regulations. Blind transfer creates serious compliance risk.',
+    phrase: '"Review against FISC guidelines and data protection requirements before any transfer."',
+    tags: ['cross-border','fsa','governance'],
+    jaHint: 'ログデータの国外移転はFISC基準と個人情報保護要件を先に確認する。'
+  },
+  {
+    id: 29, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'An inspector asks how you track outstanding audit findings.',
+    q: 'Which response shows a mature audit tracking process?',
+    opts: [
+      '"We remember the main points from the audit report."',
+      '"Audit findings are tracked in a register, assigned to owners with target dates, and progress is reported to management monthly."'
+    ],
+    correct: 1,
+    why: '"Remember the main points" is alarming — it suggests no formal tracking. A register with owners, dates, and management reporting signals governance maturity.',
+    phrase: '"Tracked in a register, assigned to owners with target dates, reported to management monthly."',
+    tags: ['english','fsa','evidence'],
+    jaHint: '監査指摘は「管理台帳・担当者・期限・月次報告」で追跡していることを示す。'
+  },
+  {
+    id: 30, cat: 'fsa', diff: 3,
+    inspector: 'FSA Inspector',
+    context: 'The inspector reviews your network segmentation.',
+    q: '"How do you isolate your trading systems from general corporate networks?"',
+    opts: [
+      'They are on different servers.',
+      'Trading systems are network-segmented from corporate systems. Access between zones is controlled by firewall rules and requires explicit approval.'
+    ],
+    correct: 1,
+    why: '"Different servers" is not network segmentation. The FSA expects logical or physical segmentation with enforced firewall policies and documented access rules.',
+    phrase: '"Network-segmented… access controlled by firewall rules and requires explicit approval."',
+    tags: ['fsa','access','evidence'],
+    jaHint: 'ネットワーク分離は「セグメント分け・ファイアウォール・明示的承認」を説明する。'
+  },
+
+  // ── EXPANSION BATCH 3 (ids 31–45) ────────────────────────────
+  {
+    id: 31, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: 'mm Securities is under inspection.',
+    q: '"Do you perform regular penetration testing on your systems?"',
+    opts: [
+      'We rely on our firewall and antivirus to protect us.',
+      'Yes. Penetration tests are conducted annually by an independent third party. Findings are tracked and remediated according to risk priority.'
+    ],
+    correct: 1,
+    why: 'The FSA expects proactive testing by independent parties, not passive reliance on perimeter controls. Tracking and remediation evidence is essential.',
+    phrase: '"Conducted by an independent third party… findings tracked and remediated by risk priority."',
+    tags: ['fsa','evidence'],
+    jaHint: 'ペネトレーションテストは「独立した第三者・年次・指摘追跡・優先対応」を明示する。'
+  },
+  {
+    id: 32, cat: 'evidence', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Please show evidence of your last business continuity drill."',
+    opts: [
+      'We conducted one but did not write a formal report.',
+      'Yes. BCP drills are documented with date, scope, participants, results, and follow-up action items. I can provide the latest drill report.'
+    ],
+    correct: 1,
+    why: '"Conducted but no report" is equivalent to not having done it from a regulatory perspective. Documentation is the proof of compliance.',
+    phrase: '"Documented with date, scope, participants, results, and follow-up action items."',
+    tags: ['fsa','evidence'],
+    jaHint: 'BCPテストは「日時・範囲・参加者・結果・改善事項」を記録した報告書が必要。'
+  },
+  {
+    id: 33, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector is reviewing your change management process.',
+    q: '"We noticed several emergency changes last quarter with no post-implementation review. Can you explain?"',
+    opts: [
+      '"Emergency changes are urgent, so post-review is sometimes skipped."',
+      '"That is a gap we have identified. We are strengthening our change management process to ensure post-implementation review for all changes, including emergencies."'
+    ],
+    correct: 1,
+    why: 'Justifying skipped reviews signals a compliance culture problem. Acknowledging the gap and showing corrective action is the correct FSA-facing response.',
+    phrase: '"Gap identified… strengthening change management to ensure post-implementation review for all changes."',
+    tags: ['fsa','pressure','governance'],
+    jaHint: '変更管理の不備は「ギャップ認識＋是正措置」で答える。正当化は逆効果。'
+  },
+  {
+    id: 34, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you manage privileged accounts such as service accounts and shared IDs?"',
+    opts: [
+      'Service accounts are used by the operations team. Passwords are shared internally.',
+      'Privileged and service accounts are inventoried, individually assigned where possible, and credentials are managed in a privileged access management system.'
+    ],
+    correct: 1,
+    why: 'Shared credentials and unmanaged service accounts are major FSA red flags. A PAM system with individual accountability demonstrates maturity.',
+    phrase: '"Inventoried, individually assigned, credentials managed in a PAM system."',
+    tags: ['fsa','access'],
+    jaHint: 'サービスアカウントは「台帳管理・個人単位・PAM管理」の三点で説明する。'
+  },
+  {
+    id: 35, cat: 'cross-border', diff: 3,
+    inspector: 'Cross-border Scenario',
+    context: 'China HQ removes a Japan-side security alert rule without notice.',
+    q: 'What is the appropriate response as Japan CISO?',
+    opts: [
+      '"I will check with the China team and see if it is okay."',
+      '"I will formally escalate this to senior management. Changes to Japan security controls require approval by the Japan entity and must be documented."'
+    ],
+    correct: 1,
+    why: 'Unauthorized changes to Japan security controls is a governance failure requiring formal escalation — not informal inquiry. The Japan entity must own its control environment.',
+    phrase: '"Formally escalate… changes require approval by the Japan entity and must be documented."',
+    tags: ['cross-border','governance','fsa'],
+    jaHint: '日本のセキュリティ統制の無断変更は、日本法人への正式エスカレーションが必要。'
+  },
+  {
+    id: 36, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you assess the security risk of new products before launch?"',
+    opts: [
+      'The product team handles security reviews internally.',
+      'New products undergo a formal security risk assessment as part of the product development lifecycle, with sign-off required before launch.'
+    ],
+    correct: 1,
+    why: 'Informal internal reviews lack independence and rigor. The FSA expects a formalized process with documented sign-off integrated into the development lifecycle.',
+    phrase: '"Formal security risk assessment in the development lifecycle, sign-off required before launch."',
+    tags: ['fsa','governance'],
+    jaHint: '新製品のセキュリティレビューは「開発ライフサイクル組み込み・正式評価・承認必須」。'
+  },
+  {
+    id: 37, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'The FSA asks about your security policy governance.',
+    q: 'Which sentence best describes a well-governed security policy framework?',
+    opts: [
+      '"We have policies written down somewhere."',
+      '"Security policies are documented, version-controlled, reviewed annually, and approved by senior management."'
+    ],
+    correct: 1,
+    why: '"Written down somewhere" sounds informal and unmanaged. "Version-controlled," "reviewed annually," and "approved by senior management" signal governance maturity.',
+    phrase: '"Documented, version-controlled, reviewed annually, approved by senior management."',
+    tags: ['english','fsa','governance'],
+    jaHint: 'セキュリティポリシーは「文書化・版管理・年次レビュー・経営承認」の4要素で説明。'
+  },
+  {
+    id: 38, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector presses you on a recent data breach at a peer firm.',
+    q: '"A competitor just had a major data breach. Have you assessed whether you face the same risk?"',
+    opts: [
+      '"We have different systems, so we are not affected."',
+      '"Yes. We conducted a threat assessment following that incident, reviewed our relevant controls, and confirmed our exposure. I can share the assessment summary."'
+    ],
+    correct: 1,
+    why: 'Dismissing peer incidents without assessment shows complacency. Proactively reviewing and documenting your exposure demonstrates security awareness.',
+    phrase: '"Conducted a threat assessment… confirmed our exposure… I can share the summary."',
+    tags: ['fsa','pressure','evidence'],
+    jaHint: '同業他社のインシデントを受けて自社リスクを評価・文書化することが成熟度の証明。'
+  },
+  {
+    id: 39, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you manage end-of-life systems that cannot be immediately replaced?"',
+    opts: [
+      'We continue to use them until we have budget to replace them.',
+      'EOL systems are inventoried and subject to compensating controls such as network isolation, enhanced monitoring, and a documented remediation timeline.'
+    ],
+    correct: 1,
+    why: 'The FSA accepts EOL systems with documented compensating controls and a remediation plan. Continuing use without controls is unacceptable.',
+    phrase: '"Compensating controls: network isolation, enhanced monitoring, documented remediation timeline."',
+    tags: ['fsa','evidence','access'],
+    jaHint: 'EOLシステムは「補完的統制（隔離・監視強化）＋対応計画」をセットで示す。'
+  },
+  {
+    id: 40, cat: 'evidence', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Show me your security KPIs and how they are reported to management."',
+    opts: [
+      'We do not have formal KPIs but management is kept informed.',
+      'Security KPIs such as patch compliance rate, incident count, and mean time to resolve are tracked monthly and reported to the risk committee.'
+    ],
+    correct: 1,
+    why: '"Management is kept informed" without metrics is not governance. The FSA expects measurable KPIs with regular management reporting.',
+    phrase: '"KPIs tracked monthly and reported to the risk committee."',
+    tags: ['fsa','evidence','governance'],
+    jaHint: 'セキュリティKPIは「具体的指標・月次追跡・リスク委員会報告」で説明する。'
+  },
+  {
+    id: 41, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'The global CISO asks you to skip a local regulatory requirement to meet a project deadline.',
+    q: 'What is your response?',
+    opts: [
+      '"I understand the pressure. We will skip it this time."',
+      '"I cannot skip this requirement as it is mandated by FSA regulation. I will escalate the conflict between the deadline and compliance to senior management."'
+    ],
+    correct: 1,
+    why: 'Regulatory requirements are non-negotiable regardless of global pressure. Escalating to senior management protects both the firm and the CISO.',
+    phrase: '"Cannot skip FSA-mandated requirements… will escalate to senior management."',
+    tags: ['cross-border','fsa','governance'],
+    jaHint: 'FSA規制要件はグローバルCISOの指示でも省略できない。経営層へのエスカレーションが正解。'
+  },
+  {
+    id: 42, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you handle whistleblower reports related to security or compliance issues?"',
+    opts: [
+      'Employees can speak to their manager directly.',
+      'We have a formal whistleblower channel that allows anonymous reporting. Reports are reviewed independently and protected from retaliation.'
+    ],
+    correct: 1,
+    why: 'An informal channel through managers creates bias and discourages reporting. The FSA expects an independent, anonymous, and protected reporting mechanism.',
+    phrase: '"Anonymous reporting, reviewed independently, protected from retaliation."',
+    tags: ['fsa','governance'],
+    jaHint: '内部通報制度は「匿名性・独立審査・不利益取り扱い禁止」の三点を明示する。'
+  },
+  {
+    id: 43, cat: 'english', diff: 1,
+    inspector: 'English Phrase Practice',
+    context: 'An FSA inspector asks you to explain your data classification policy.',
+    q: 'Which answer best demonstrates a mature data classification approach?',
+    opts: [
+      '"We treat all data carefully."',
+      '"Data is classified into tiers based on sensitivity. Handling requirements, access controls, and retention periods are defined for each classification level."'
+    ],
+    correct: 1,
+    why: '"Treat carefully" is vague and unmeasurable. A tiered classification with defined controls per level shows a structured, auditable approach.',
+    phrase: '"Classified into tiers… handling, access, and retention defined per level."',
+    tags: ['english','fsa','evidence'],
+    jaHint: 'データ分類は「階層・取り扱い要件・アクセス制限・保存期間」を分類ごとに定義する。'
+  },
+  {
+    id: 44, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Final Pressure)',
+    context: 'The inspector questions your CISO authority.',
+    q: '"Does the CISO in Japan have independent authority to halt a system if a critical risk is found, even if HQ disagrees?"',
+    opts: [
+      '"The CISO would need HQ approval before taking such action."',
+      '"Yes. The Japan CISO has authority to invoke emergency controls for critical risk. This authority is documented in our governance policy and approved by the board."'
+    ],
+    correct: 1,
+    why: 'The FSA needs assurance that local risk controls cannot be blocked by foreign HQ. Documented board-approved authority for the Japan CISO is a key governance requirement.',
+    phrase: '"Japan CISO has documented, board-approved authority to invoke emergency controls."',
+    tags: ['fsa','pressure','governance','cross-border'],
+    jaHint: '日本CISOは緊急統制を発動する独立した権限を持ち、それが取締役会で承認・文書化されていることを示す。'
+  },
+  {
+    id: 45, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: 'The inspector reviews your supplier risk management.',
+    q: '"One of your critical vendors recently had a data breach. What is your process for managing this situation?"',
+    opts: [
+      '"We will wait for the vendor to inform us of the impact."',
+      '"We have a vendor incident notification clause in our contracts. Upon notification, we assess exposure, apply additional controls if needed, and report to management."'
+    ],
+    correct: 1,
+    why: 'Waiting passively for vendor notification is insufficient. The FSA expects contractual obligations, active exposure assessment, and management reporting.',
+    phrase: '"Notification clause in contracts… assess exposure, apply controls, report to management."',
+    tags: ['fsa','governance','evidence'],
+    jaHint: 'ベンダーインシデントは「契約上の通知条項・影響調査・追加統制・管理報告」で対応する。'
+  },
+
+  // ── EXPANSION BATCH 4 (ids 46–60) ────────────────────────────
+  {
+    id: 46, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: 'mm Securities is under inspection.',
+    q: '"How do you ensure mobile devices used by employees do not expose customer data?"',
+    opts: [
+      'Employees are responsible for keeping their phones safe.',
+      'Mobile devices accessing company systems are enrolled in our MDM solution. Remote wipe, encryption, and access policies are enforced.'
+    ],
+    correct: 1,
+    why: 'Personal responsibility without technical enforcement is insufficient. The FSA expects MDM-enforced controls including encryption and remote wipe capability.',
+    phrase: '"Enrolled in MDM… remote wipe, encryption, and access policies enforced."',
+    tags: ['fsa','access','evidence'],
+    jaHint: 'モバイル端末はMDM登録・リモートワイプ・暗号化・アクセスポリシーの適用が必須。'
+  },
+  {
+    id: 47, cat: 'evidence', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Can you provide documentation showing your security team\'s qualifications and training records?"',
+    opts: [
+      'Our team members are experienced professionals. We can discuss their background.',
+      'Yes. We maintain training records for all security staff. Certifications, completed courses, and CPE hours are tracked and available for review.'
+    ],
+    correct: 1,
+    why: 'Verbal descriptions of experience are not evidence. The FSA expects documented training records, certifications, and ongoing professional education.',
+    phrase: '"Training records, certifications, and CPE hours tracked and available for review."',
+    tags: ['fsa','evidence'],
+    jaHint: 'セキュリティ担当者の資格・研修記録・CPE時間は文書化して提示できる状態にする。'
+  },
+  {
+    id: 48, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you manage the risk of employees who have access to both customer data and administrative systems?"',
+    opts: [
+      'We trust senior employees with broader access to do their jobs efficiently.',
+      'We apply separation of duties controls. Employees with access to customer data are restricted from administrative system functions to limit combined risk.'
+    ],
+    correct: 1,
+    why: 'Separation of duties is a fundamental FSA control expectation. Broad combined access creates insider threat and fraud risk that cannot be managed by trust alone.',
+    phrase: '"Separation of duties controls applied to limit combined access risk."',
+    tags: ['fsa','access','governance'],
+    jaHint: '職務分掌（Separation of Duties）は顧客データと管理機能の兼任リスクを防ぐ基本統制。'
+  },
+  {
+    id: 49, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector has reviewed your risk register.',
+    q: '"Several high risks have been open for over a year with no change in status. How do you explain this?"',
+    opts: [
+      '"Resource constraints have made it difficult to address them quickly."',
+      '"We acknowledge these risks have been open too long. Each item now has a dedicated owner, revised timeline, and escalated to the risk committee for priority review."'
+    ],
+    correct: 1,
+    why: 'Resource constraints are understandable but not sufficient for regulators. Showing structural changes — ownership, revised timelines, committee escalation — demonstrates accountability.',
+    phrase: '"Dedicated owner, revised timeline, escalated to risk committee for priority review."',
+    tags: ['fsa','pressure','governance'],
+    jaHint: '長期未対応リスクは「担当者・期限・リスク委員会への上申」で対応姿勢を示す。'
+  },
+  {
+    id: 50, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'HQ instructs the Japan team to use a shared global SIEM without local log copies.',
+    q: 'What concern should the Japan CISO raise?',
+    opts: [
+      '"That should be fine. Global tools are usually more advanced."',
+      '"We need to confirm that log retention periods, access controls, and FISC data residency requirements are met before relying solely on the global SIEM."'
+    ],
+    correct: 1,
+    why: 'FISC requires financial institutions in Japan to manage data access and retention carefully. Accepting a global SIEM without reviewing local requirements creates regulatory risk.',
+    phrase: '"Confirm FISC data residency, log retention, and access controls before proceeding."',
+    tags: ['cross-border','fsa','governance'],
+    jaHint: 'グローバルSIEMの採用前にFISCのデータ所在地・保存期間・アクセス制限を確認する。'
+  },
+  {
+    id: 51, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Does your organization have a documented information security policy approved by management?"',
+    opts: [
+      'Yes, we have guidelines that the security team follows.',
+      'Yes. Our information security policy is formally documented, approved by senior management, communicated to all staff, and reviewed annually.'
+    ],
+    correct: 1,
+    why: 'Internal guidelines without management approval and communication are not a security policy. The FSA expects formal approval, distribution, and regular review.',
+    phrase: '"Formally documented, management-approved, communicated to all staff, reviewed annually."',
+    tags: ['fsa','governance'],
+    jaHint: '情報セキュリティポリシーは「正式文書化・経営承認・全社周知・年次レビュー」が必要。'
+  },
+  {
+    id: 52, cat: 'english', diff: 1,
+    inspector: 'English Phrase Practice',
+    context: 'An inspector asks how you respond when a new critical vulnerability is publicly disclosed.',
+    q: 'Which answer best describes a mature vulnerability response process?',
+    opts: [
+      '"We check if it affects us when we have time."',
+      '"Upon disclosure, we assess exposure within 24 hours, prioritize based on risk, and apply remediation or compensating controls within defined SLAs."'
+    ],
+    correct: 1,
+    why: '"When we have time" implies no urgency framework. Demonstrating a time-bound triage process shows the FSA that critical vulnerabilities are treated with appropriate urgency.',
+    phrase: '"Assess exposure within 24 hours… remediate within defined SLAs."',
+    tags: ['english','fsa','evidence'],
+    jaHint: '新規脆弱性への対応は「24時間以内の影響評価・リスク優先・SLA内対応」で示す。'
+  },
+  {
+    id: 53, cat: 'fsa', diff: 3,
+    inspector: 'FSA Inspector',
+    context: 'The inspector is reviewing your DLP controls.',
+    q: '"How do you prevent sensitive customer data from being emailed outside the company?"',
+    opts: [
+      'We train employees not to send customer data externally.',
+      'We have DLP controls that detect and block outbound emails containing sensitive data patterns. Exceptions require management approval and are logged.'
+    ],
+    correct: 1,
+    why: 'Training alone is insufficient. The FSA expects technical DLP controls with blocking capability, exception management, and audit logs.',
+    phrase: '"DLP controls detect and block outbound sensitive data. Exceptions require approval and are logged."',
+    tags: ['fsa','access','evidence'],
+    jaHint: 'DLPは技術的ブロック・例外承認・ログの三点で説明する。意識向上だけでは不十分。'
+  },
+  {
+    id: 54, cat: 'evidence', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Show me evidence that your security controls are effective, not just that they exist."',
+    opts: [
+      'We have all the required controls in place.',
+      'We conduct regular control effectiveness testing. Results including pass rates, exceptions, and improvement actions are documented and reviewed by management.'
+    ],
+    correct: 1,
+    why: 'Existence of controls does not prove effectiveness. The FSA expects periodic testing with measurable outcomes and management oversight.',
+    phrase: '"Control effectiveness tested regularly. Pass rates, exceptions, and improvements documented."',
+    tags: ['fsa','evidence','governance'],
+    jaHint: '統制の「存在」だけでなく「有効性」をテスト結果・合格率・例外・改善事項で証明する。'
+  },
+  {
+    id: 55, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector questions whether your team is adequately staffed.',
+    q: '"Your security team covers all of Japan operations with very few people. Is that sufficient?"',
+    opts: [
+      '"Our team works very hard and has never had a major incident."',
+      '"We acknowledge the resource constraint. We have documented the risk, implemented compensating controls, and have a staffing enhancement proposal under management review."'
+    ],
+    correct: 1,
+    why: 'Hard work is not a control. Documenting the staffing risk, compensating controls, and a remediation proposal shows the FSA you are managing the gap systematically.',
+    phrase: '"Risk documented, compensating controls applied, staffing proposal under management review."',
+    tags: ['fsa','pressure','governance'],
+    jaHint: '人員不足は「リスク文書化・補完的統制・経営層への増員提案」で対応姿勢を示す。'
+  },
+  {
+    id: 56, cat: 'cross-border', diff: 3,
+    inspector: 'Cross-border Scenario',
+    context: 'China HQ asks for real-time access to Japan customer transaction logs for fraud analysis.',
+    q: 'What must the Japan CISO consider before granting access?',
+    opts: [
+      '"Fraud analysis is important. We should grant access quickly."',
+      '"We must review this against Japan\'s Act on Protection of Personal Information, FSA data governance requirements, and FISC guidelines before granting any cross-border access."'
+    ],
+    correct: 1,
+    why: 'Customer transaction logs contain personal information subject to Japan\'s APPI. Cross-border access without legal review creates serious regulatory exposure.',
+    phrase: '"Review APPI, FSA requirements, and FISC guidelines before granting cross-border access."',
+    tags: ['cross-border','fsa','governance'],
+    jaHint: '顧客取引ログの国外アクセスは個人情報保護法・FSA要件・FISC基準を先に確認する。'
+  },
+  {
+    id: 57, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you verify that your employees do not have unauthorized software installed on company systems?"',
+    opts: [
+      'We tell employees they should only install approved software.',
+      'Software installation is restricted by endpoint controls. An approved software list is maintained, and unauthorized installations are detected and blocked automatically.'
+    ],
+    correct: 1,
+    why: 'Policy without enforcement is insufficient. The FSA expects technical enforcement of software controls, not just awareness.',
+    phrase: '"Endpoint controls restrict installation. Unauthorized software detected and blocked automatically."',
+    tags: ['fsa','access'],
+    jaHint: 'ソフトウェア管理はエンドポイント技術統制による許可リスト管理と自動検知・ブロックで実施。'
+  },
+  {
+    id: 58, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'The inspector asks about your approach to managing security for remote workers.',
+    q: 'Which answer demonstrates secure remote work controls?',
+    opts: [
+      '"Remote employees use VPN. We think that is enough."',
+      '"Remote access is secured via VPN with multi-factor authentication. Endpoint security is enforced, and remote sessions are subject to the same monitoring as on-site access."'
+    ],
+    correct: 1,
+    why: '"Think that is enough" signals no assurance. MFA, endpoint enforcement, and equivalent monitoring demonstrate that remote access risk is managed equivalently to on-site.',
+    phrase: '"VPN with MFA, endpoint enforcement, and equivalent monitoring for remote access."',
+    tags: ['english','fsa','access'],
+    jaHint: 'リモートアクセスは「VPN+MFA・エンドポイント統制・オンサイトと同等の監視」で説明する。'
+  },
+  {
+    id: 59, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How is security risk formally reported to your board or executive committee?"',
+    opts: [
+      'The security team reports to the IT director who escalates when necessary.',
+      'Security risk is formally reported to the board or risk committee on a regular schedule. The report includes key risk indicators, incidents, and open items.'
+    ],
+    correct: 1,
+    why: 'Ad hoc escalation is insufficient. The FSA expects regular, structured board-level reporting of security risk with defined content.',
+    phrase: '"Formally reported to board/risk committee on schedule, including KRIs, incidents, and open items."',
+    tags: ['fsa','governance'],
+    jaHint: 'セキュリティリスクは取締役会・リスク委員会へ定期的・正式に報告する体制が必要。'
+  },
+  {
+    id: 60, cat: 'evidence', diff: 3,
+    inspector: 'FSA Inspector',
+    context: 'The inspector asks to see your security risk assessment for the current year.',
+    q: 'What should the assessment contain to satisfy the FSA?',
+    opts: [
+      'A list of known security issues and our plan to fix them.',
+      'A formal risk assessment covering threat landscape, asset inventory, control gaps, residual risk ratings, treatment plans, and management sign-off.'
+    ],
+    correct: 1,
+    why: 'A simple issue list lacks the structure the FSA expects. A formal risk assessment must include threat analysis, asset scope, control gaps, residual risk, treatment decisions, and governance sign-off.',
+    phrase: '"Threat landscape, asset inventory, control gaps, residual risk, treatment plans, management sign-off."',
+    tags: ['fsa','evidence','governance'],
+    jaHint: 'リスクアセスメントは「脅威・資産・統制ギャップ・残余リスク・対応計画・経営承認」の6要素が必要。'
+  },
+
+  // ── EXPANSION BATCH 5 (ids 61–75) ────────────────────────────
+  {
+    id: 61, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: 'mm Securities is under inspection.',
+    q: '"How do you manage security risks introduced by contractors and temporary staff?"',
+    opts: [
+      'Contractors sign an NDA before starting work.',
+      'Contractors are subject to the same onboarding security checks as employees. Access is time-limited, scoped to need, and revoked immediately upon contract end.'
+    ],
+    correct: 1,
+    why: 'NDA alone is insufficient. The FSA expects contractors to receive equivalent access governance: scoped, time-limited, and revoked upon departure.',
+    phrase: '"Access time-limited, scoped to need, revoked immediately upon contract end."',
+    tags: ['fsa','access'],
+    jaHint: '委託社員・派遣社員も「期限付き・必要最小限・契約終了即時停止」の同等管理が必要。'
+  },
+  {
+    id: 62, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'China HQ wants to use a single shared administrator account for all Japan systems to simplify management.',
+    q: 'What should the Japan CISO do?',
+    opts: [
+      '"Shared accounts are common in global operations. We will accept this."',
+      '"Shared administrator accounts violate our access control policy and FSA accountability requirements. I will propose an alternative solution with individual privileged accounts."'
+    ],
+    correct: 1,
+    why: 'Shared admin accounts eliminate individual accountability, which is a core FSA requirement. The Japan CISO must refuse and propose a compliant alternative.',
+    phrase: '"Violates FSA accountability requirements. I will propose individual privileged accounts."',
+    tags: ['cross-border','fsa','access'],
+    jaHint: '共有管理者アカウントは個人の説明責任を失わせるためFSA要件に違反。代替案を提案する。'
+  },
+  {
+    id: 63, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'An FSA inspector asks how you communicate security obligations to staff.',
+    q: 'Which response best demonstrates an effective security awareness program?',
+    opts: [
+      '"We send an email about security every few months."',
+      '"Security obligations are communicated through annual mandatory training, periodic updates on emerging threats, and acknowledgment of the security policy by all staff."'
+    ],
+    correct: 1,
+    why: 'Occasional emails are not a training program. Mandatory annual training, regular updates, and policy acknowledgment demonstrate a structured program with measurable reach.',
+    phrase: '"Annual mandatory training, threat updates, and policy acknowledgment by all staff."',
+    tags: ['english','fsa','evidence'],
+    jaHint: 'セキュリティ義務の周知は「年次必須研修・脅威情報更新・ポリシー受領確認」で証明する。'
+  },
+  {
+    id: 64, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector has found inconsistencies in your access log records.',
+    q: '"There are gaps in your access logs for a two-week period. What happened?"',
+    opts: [
+      '"There may have been a technical issue. We are not sure."',
+      '"We have investigated this gap. The cause was a logging configuration error. It has been corrected, and we have assessed the risk exposure during the gap period."'
+    ],
+    correct: 1,
+    why: '"Not sure" is alarming to regulators. You must demonstrate root cause analysis, corrective action, and risk exposure assessment — even for logging failures.',
+    phrase: '"Root cause identified, corrected, and risk exposure during the gap assessed."',
+    tags: ['fsa','pressure','evidence'],
+    jaHint: 'ログの欠落は「原因究明・是正措置・欠落期間のリスク評価」の三点で答える。'
+  },
+  {
+    id: 65, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Do you have a formal process for approving exceptions to your security policies?"',
+    opts: [
+      'Security exceptions are decided case by case by the security team.',
+      'Yes. Policy exceptions require formal justification, risk assessment, management approval, and a defined expiry date. All exceptions are tracked in a register.'
+    ],
+    correct: 1,
+    why: 'Ad hoc exception decisions without oversight create uncontrolled risk. The FSA expects a governed exception process with accountability and tracking.',
+    phrase: '"Formal justification, risk assessment, management approval, expiry date, and tracked register."',
+    tags: ['fsa','governance'],
+    jaHint: 'ポリシー例外は「正式な申請・リスク評価・管理承認・期限・管理台帳」で統制する。'
+  },
+  {
+    id: 66, cat: 'fsa', diff: 3,
+    inspector: 'FSA Inspector',
+    context: 'The inspector is reviewing your cloud security posture.',
+    q: '"Which cloud security controls are in place for your production environment?"',
+    opts: [
+      'We rely on the cloud provider\'s built-in security features.',
+      'We implement shared responsibility controls: network segmentation, identity access management, encryption, security monitoring, and regular cloud security posture assessments.'
+    ],
+    correct: 1,
+    why: 'The cloud shared responsibility model means the customer is responsible for their own controls. The FSA expects active implementation of customer-side controls beyond provider defaults.',
+    phrase: '"Shared responsibility controls: segmentation, IAM, encryption, monitoring, posture assessments."',
+    tags: ['fsa','evidence','access'],
+    jaHint: 'クラウドは共有責任モデルを前提に、顧客側の統制（セグメント・IAM・暗号化・監視・評価）を実装する。'
+  },
+  {
+    id: 67, cat: 'evidence', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Can you demonstrate that your firewall rules are reviewed and up to date?"',
+    opts: [
+      'The network team manages firewall rules. They would know if there was an issue.',
+      'Firewall rules are reviewed on a defined schedule. Unused rules are removed, and changes are documented. The last review report is available for your inspection.'
+    ],
+    correct: 1,
+    why: '"The team would know" is not evidence. The FSA expects documented review cycles, cleanup of obsolete rules, and change records.',
+    phrase: '"Rules reviewed on schedule, unused rules removed, changes documented, report available."',
+    tags: ['fsa','evidence','access'],
+    jaHint: 'ファイアウォールルールは「定期レビュー・不要ルール削除・変更記録・報告書」で管理を証明する。'
+  },
+  {
+    id: 68, cat: 'cross-border', diff: 3,
+    inspector: 'Cross-border Scenario',
+    context: 'The global security team proposes a unified global incident response playbook replacing Japan\'s local IRP.',
+    q: 'What should the Japan CISO evaluate before accepting?',
+    opts: [
+      '"A global playbook is more efficient. We should adopt it."',
+      '"We need to verify the global playbook covers Japan-specific requirements including FSA reporting timelines, language needs, and local escalation paths before replacing our local IRP."'
+    ],
+    correct: 1,
+    why: 'Global playbooks often lack jurisdiction-specific requirements. Japan-specific FSA reporting obligations, language, and contacts must be preserved in any IRP.',
+    phrase: '"Verify FSA reporting timelines, language requirements, and local escalation paths are covered."',
+    tags: ['cross-border','fsa','governance'],
+    jaHint: 'グローバルIRPには日本のFSA報告期限・日本語対応・ローカルエスカレーション経路が含まれているか確認する。'
+  },
+  {
+    id: 69, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you manage the security of APIs that connect your systems to external partners?"',
+    opts: [
+      'Our partners are trusted firms. The APIs use standard protocols.',
+      'APIs are secured with authentication, authorization controls, and rate limiting. External connections are inventoried and subject to regular security assessments.'
+    ],
+    correct: 1,
+    why: '"Trusted partners" and "standard protocols" do not constitute API security governance. The FSA expects authentication, authorization, rate limiting, and regular assessment.',
+    phrase: '"Authentication, authorization, rate limiting, inventoried, and regularly assessed."',
+    tags: ['fsa','access','evidence'],
+    jaHint: 'API管理は「認証・認可・レート制限・台帳管理・定期評価」で外部接続リスクを統制する。'
+  },
+  {
+    id: 70, cat: 'english', diff: 3,
+    inspector: 'English Phrase Practice',
+    context: 'The inspector challenges you on your security governance maturity.',
+    q: 'Which statement best demonstrates governance maturity to a regulator?',
+    opts: [
+      '"Our security team is experienced and takes security seriously."',
+      '"Security governance is embedded in our three lines of defense model. Risk is owned by the business, overseen by compliance, and independently assured by internal audit."'
+    ],
+    correct: 1,
+    why: 'Claiming experience and seriousness is subjective. The three lines of defense model — ownership, oversight, assurance — is the governance framework regulators expect in financial institutions.',
+    phrase: '"Three lines of defense: business ownership, compliance oversight, independent assurance."',
+    tags: ['english','fsa','governance'],
+    jaHint: '「3つの防衛線」（事業部門・コンプライアンス・内部監査）はFSAが期待するガバナンスモデル。'
+  },
+  {
+    id: 71, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you ensure backups of critical data are reliable and recoverable?"',
+    opts: [
+      'Backups are scheduled automatically every night.',
+      'Backups are performed on schedule and verified through regular restoration tests. Results are documented and any failures are tracked to resolution.'
+    ],
+    correct: 1,
+    why: 'Scheduled backups without testing prove nothing. The FSA expects verified restoration — because an untested backup is not a backup.',
+    phrase: '"Verified through regular restoration tests. Results documented, failures tracked."',
+    tags: ['fsa','evidence'],
+    jaHint: 'バックアップは「定期的な復元テスト・結果文書化・障害追跡」で実効性を証明する。'
+  },
+  {
+    id: 72, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector expresses concern about your third-party audit findings.',
+    q: '"Your external auditor identified 12 medium-risk findings. Only 3 have been closed. Why?"',
+    opts: [
+      '"Medium-risk findings are not urgent. We are addressing them as capacity allows."',
+      '"We acknowledge the pace. We have re-prioritized the open items, assigned executive sponsors, and set hard deadlines. I can provide the updated remediation schedule."'
+    ],
+    correct: 1,
+    why: 'Treating medium risks as low priority signals weak risk culture. Showing re-prioritization, executive ownership, and hard deadlines demonstrates corrective governance.',
+    phrase: '"Re-prioritized, executive sponsors assigned, hard deadlines set — updated schedule available."',
+    tags: ['fsa','pressure','governance','evidence'],
+    jaHint: '中リスク指摘の放置は問題。「再優先付け・エグゼクティブ後援・明確な期限」を示す。'
+  },
+  {
+    id: 73, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you prevent phishing attacks from compromising employee credentials?"',
+    opts: [
+      'We train employees to spot phishing emails.',
+      'We combine technical controls — email filtering, anti-phishing tools, and MFA — with regular phishing simulations and employee training to build layered defense.'
+    ],
+    correct: 1,
+    why: 'Training alone fails when employees make mistakes. The FSA expects defense in depth: technical filtering, MFA to limit damage, and simulations to measure awareness.',
+    phrase: '"Email filtering, MFA, phishing simulations, and training — layered defense."',
+    tags: ['fsa','access','evidence'],
+    jaHint: 'フィッシング対策は「メールフィルタ・MFA・模擬訓練・教育」の多層防御で示す。'
+  },
+  {
+    id: 74, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'Japan CISO discovers the China security team has read access to Japan employee HR data.',
+    q: 'What is the appropriate immediate action?',
+    opts: [
+      '"I will ask the China team why they need this access."',
+      '"I will immediately revoke the unauthorized access, document the incident, assess data exposure, and formally escalate to senior management and legal."'
+    ],
+    correct: 1,
+    why: 'Unauthorized access to HR data is a potential APPI violation requiring immediate revocation, not investigation. Legal and management must be notified promptly.',
+    phrase: '"Revoke immediately, document, assess exposure, escalate to management and legal."',
+    tags: ['cross-border','fsa','governance'],
+    jaHint: '人事データへの不正アクセスは即時遮断・記録・被害評価・経営層＆法務への報告が必要。'
+  },
+  {
+    id: 75, cat: 'english', diff: 1,
+    inspector: 'English Phrase Practice',
+    context: 'An FSA inspector asks what "defense in depth" means in your organization.',
+    q: 'Which answer best explains the defense in depth concept professionally?',
+    opts: [
+      '"We have many security tools installed."',
+      '"Defense in depth means we apply multiple overlapping layers of security controls so that if one control fails, others continue to protect the asset."'
+    ],
+    correct: 1,
+    why: 'Listing tools is not a concept explanation. Describing layered, overlapping controls demonstrates understanding of the principle — which is what the FSA inspects.',
+    phrase: '"Multiple overlapping layers — if one control fails, others continue to protect the asset."',
+    tags: ['english','fsa'],
+    jaHint: '多層防御は「単一統制の失敗を他の統制が補う重複レイヤー」として概念的に説明する。'
+  },
+
+  // ── EXPANSION BATCH 6 (ids 76–90) ────────────────────────────
+  {
+    id: 76, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: 'mm Securities is under inspection.',
+    q: '"How do you handle the discovery of a zero-day vulnerability affecting your trading platform?"',
+    opts: [
+      'We wait for the vendor to release a patch before taking action.',
+      'We immediately assess exposure, implement compensating controls such as WAF rules or network isolation, notify management, and monitor closely until a vendor patch is available.'
+    ],
+    correct: 1,
+    why: 'Waiting for a vendor patch leaves the firm exposed. The FSA expects immediate compensating controls, management notification, and enhanced monitoring for zero-day events.',
+    phrase: '"Immediate compensating controls, management notification, and enhanced monitoring until patch available."',
+    tags: ['fsa','evidence','access'],
+    jaHint: 'ゼロデイ脆弱性はパッチ待ちではなく「補完的統制・管理通知・監視強化」で即時対応する。'
+  },
+  {
+    id: 77, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector reviews a recent phishing incident.',
+    q: '"An employee clicked a phishing link last month and credentials were compromised. What did you do?"',
+    opts: [
+      '"We reset the password and told the employee to be more careful."',
+      '"We immediately disabled the account, investigated scope of compromise, performed a forensic review, notified management, and enhanced monitoring. We also ran targeted phishing training for all staff."'
+    ],
+    correct: 1,
+    why: 'Password reset alone is insufficient incident response. The FSA expects containment, scope analysis, forensics, management notification, and systemic improvement.',
+    phrase: '"Account disabled, scope investigated, forensic review, management notified, training enhanced."',
+    tags: ['fsa','pressure','incident'],
+    jaHint: 'フィッシング被害は「アカウント停止・被害調査・フォレンジック・管理報告・訓練強化」の5ステップで対応。'
+  },
+  {
+    id: 78, cat: 'evidence', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Can you show that your DRP has been tested in the last 12 months?"',
+    opts: [
+      'We tested it internally but did not produce a formal report.',
+      'Yes. Our DRP test was conducted six months ago. I can provide the test report, which includes scenario, participants, results, and outstanding follow-up items.'
+    ],
+    correct: 1,
+    why: 'Undocumented testing has no regulatory value. A formal test report with scenario, participants, results, and follow-up is what the FSA requires.',
+    phrase: '"Test report available: scenario, participants, results, and follow-up items."',
+    tags: ['fsa','evidence'],
+    jaHint: 'DRPテストは「シナリオ・参加者・結果・フォローアップ」を含む正式報告書が必要。'
+  },
+  {
+    id: 79, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you validate the integrity of software deployed to production?"',
+    opts: [
+      'The development team checks the code before deployment.',
+      'Software releases go through a formal change management process including code review, security testing, and hash verification before production deployment.'
+    ],
+    correct: 1,
+    why: 'Informal developer checks do not meet FSA standards. A formal change management process with code review, security testing, and integrity checks demonstrates controlled deployment.',
+    phrase: '"Formal change process: code review, security testing, hash verification before production."',
+    tags: ['fsa','governance'],
+    jaHint: 'ソフトウェア本番展開は「変更管理・コードレビュー・セキュリティテスト・ハッシュ検証」で整合性を保証する。'
+  },
+  {
+    id: 80, cat: 'cross-border', diff: 3,
+    inspector: 'Cross-border Scenario',
+    context: 'HQ requests that Japan\'s security incident data be aggregated into a global dashboard managed from China.',
+    q: 'What governance question must the Japan CISO resolve first?',
+    opts: [
+      '"Global dashboards improve visibility. We should support this initiative."',
+      '"We must clarify data ownership, access permissions, retention obligations under APPI, and whether the aggregation method complies with FISC before proceeding."'
+    ],
+    correct: 1,
+    why: 'Aggregating incident data cross-border involves personal data and regulatory reporting obligations. APPI compliance, FISC alignment, and access governance must be verified upfront.',
+    phrase: '"Clarify data ownership, APPI compliance, FISC alignment, and access permissions first."',
+    tags: ['cross-border','fsa','governance'],
+    jaHint: 'インシデントデータの国外集約は「データ所有権・APPI・FISC・アクセス権限」を先決する。'
+  },
+  {
+    id: 81, cat: 'fsa', diff: 1,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you manage physical security for server rooms containing customer data?"',
+    opts: [
+      'Our server room is locked and only IT staff have keys.',
+      'Physical access to server rooms is controlled by card readers, logged automatically, limited to authorized personnel, and reviewed periodically. CCTV is also in place.'
+    ],
+    correct: 1,
+    why: 'Key-only control lacks logging and auditability. The FSA expects logged card access, authorized personnel lists, periodic review, and surveillance.',
+    phrase: '"Card reader access, automatically logged, authorized list reviewed, CCTV in place."',
+    tags: ['fsa','access','evidence'],
+    jaHint: 'サーバールームは「カード認証・自動ログ・承認リスト定期見直し・CCTV」で物理セキュリティを証明する。'
+  },
+  {
+    id: 82, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'An inspector asks you to describe your risk appetite statement.',
+    q: 'Which response demonstrates a mature understanding of risk appetite?',
+    opts: [
+      '"We try to take reasonable security risks."',
+      '"Our risk appetite is defined in a board-approved statement specifying tolerance levels for security, operational, and compliance risks. It guides our control investment decisions."'
+    ],
+    correct: 1,
+    why: '"Reasonable risks" is undefined. A board-approved risk appetite statement with defined tolerances and decision-making link demonstrates the governance maturity the FSA expects.',
+    phrase: '"Board-approved risk appetite statement with defined tolerances guiding control investment."',
+    tags: ['english','fsa','governance'],
+    jaHint: 'リスクアペタイトは取締役会承認・許容水準定義・統制投資判断への連動で説明する。'
+  },
+  {
+    id: 83, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Final Pressure)',
+    context: 'The inspector has reviewed multiple areas and is summarizing concerns.',
+    q: '"Overall, I am concerned that your security documentation does not reflect actual practice. What do you say?"',
+    opts: [
+      '"We believe our practice is good even if the documentation is incomplete."',
+      '"Thank you for this observation. We take documentation seriously as it is the foundation of our control evidence. We will conduct an immediate gap review between documentation and practice and report back with a remediation plan."'
+    ],
+    correct: 1,
+    why: 'Claiming good practice without documentation is a red flag. Committing to a gap review and remediation plan is the only credible FSA-facing response to this challenge.',
+    phrase: '"Conduct immediate gap review between documentation and practice. Report back with remediation plan."',
+    tags: ['fsa','pressure','evidence','governance'],
+    jaHint: '「実態と文書の乖離」指摘には「即時ギャップ調査＋是正計画の報告」で誠実に対応する。'
+  },
+  {
+    id: 84, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"How do you ensure that security requirements are included in contracts with cloud service providers?"',
+    opts: [
+      'We use standard cloud service agreements.',
+      'Our cloud contracts include specific security clauses covering data handling, access controls, incident notification, right to audit, and compliance with applicable Japanese regulations.'
+    ],
+    correct: 1,
+    why: 'Standard cloud agreements often lack Japan-specific security clauses. The FSA expects security requirements, audit rights, incident notification, and regulatory compliance to be contractually bound.',
+    phrase: '"Contracts include data handling, access controls, incident notification, audit rights, and Japanese regulatory compliance."',
+    tags: ['fsa','governance'],
+    jaHint: 'クラウド契約は「データ取り扱い・アクセス管理・インシデント通知・監査権・日本規制対応」を明示する。'
+  },
+  {
+    id: 85, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'A global IT project will give HQ engineers temporary admin access to Japan systems for 30 days.',
+    q: 'What controls should the Japan CISO put in place?',
+    opts: [
+      '"Temporary access is low risk since it is only 30 days."',
+      '"Temporary admin access must be individually assigned, time-bounded, logged, and monitored. A business justification and management approval are required before access is granted."'
+    ],
+    correct: 1,
+    why: 'Duration does not reduce risk of admin access. Individual assignment, logging, monitoring, justification, and approval are required regardless of access duration.',
+    phrase: '"Individually assigned, time-bounded, logged, monitored, justified, and management-approved."',
+    tags: ['cross-border','fsa','access'],
+    jaHint: '一時的な管理者アクセスも「個人単位・期限付き・ログ・監視・理由・承認」が必要。'
+  },
+  {
+    id: 86, cat: 'fsa', diff: 3,
+    inspector: 'FSA Inspector',
+    context: 'The inspector reviews your supply chain security.',
+    q: '"How do you assess the security risk of software components from open-source libraries?"',
+    opts: [
+      'Our developers choose reputable open-source libraries and monitor for major security news.',
+      'We use software composition analysis tools to identify open-source components and known vulnerabilities. CVEs are tracked and remediated based on risk priority within defined SLAs.'
+    ],
+    correct: 1,
+    why: 'Developer judgment and news monitoring are insufficient. The FSA expects automated SCA tooling, CVE tracking, and systematic remediation aligned with risk-based SLAs.',
+    phrase: '"SCA tools identify components and CVEs. Remediated by risk priority within defined SLAs."',
+    tags: ['fsa','evidence'],
+    jaHint: 'オープンソース管理はSCAツールによるCVE追跡とリスク優先・SLA内対応で実施する。'
+  },
+  {
+    id: 87, cat: 'evidence', diff: 2,
+    inspector: 'FSA Inspector',
+    context: '',
+    q: '"Please describe how you track and resolve findings from internal security audits."',
+    opts: [
+      'The security team discusses findings in team meetings and works to resolve them.',
+      'Internal audit findings are logged in a findings register with risk ratings, assigned owners, target dates, and status. Progress is reported to the audit committee quarterly.'
+    ],
+    correct: 1,
+    why: 'Team discussions without formal tracking are not auditable. A findings register with ownership, timelines, and committee-level reporting demonstrates governance maturity.',
+    phrase: '"Findings register with owners, dates, status, and quarterly audit committee reporting."',
+    tags: ['fsa','evidence','governance'],
+    jaHint: '内部監査指摘は「発見事項台帳・担当者・期限・状況・四半期監査委員会報告」で追跡する。'
+  },
+  {
+    id: 88, cat: 'pressure', diff: 3,
+    inspector: 'FSA Inspector (Pressure)',
+    context: 'The inspector is wrapping up and asks a final question.',
+    q: '"If you could identify your single biggest security governance weakness today, what would it be?"',
+    opts: [
+      '"I do not think we have a major weakness at this time."',
+      '"Our biggest challenge is ensuring documentation keeps pace with our operational changes. We have implemented a quarterly documentation review cycle to close this gap."'
+    ],
+    correct: 1,
+    why: 'Claiming no weakness is a credibility failure with the FSA. Self-awareness of a real gap combined with a concrete remediation action signals a mature governance culture.',
+    phrase: '"Ensuring documentation keeps pace with operational changes — quarterly review cycle implemented."',
+    tags: ['fsa','pressure','governance'],
+    jaHint: '弱点を正直に自己認識し、具体的な改善措置とともに述べることが成熟したガバナンス文化の証明。'
+  },
+  {
+    id: 89, cat: 'english', diff: 3,
+    inspector: 'English Phrase Practice',
+    context: 'The FSA asks you to explain your approach to continuous improvement in security.',
+    q: 'Which answer best describes a mature continuous improvement posture?',
+    opts: [
+      '"We fix security issues when they are found."',
+      '"We maintain a security improvement roadmap driven by risk assessments, audit findings, threat intelligence, and industry benchmarks. Progress is reviewed quarterly by senior management."'
+    ],
+    correct: 1,
+    why: 'Reactive fixing is not continuous improvement. A roadmap driven by multiple inputs — risk, audit, threat intelligence, benchmarks — with management review is the expected maturity signal.',
+    phrase: '"Security roadmap driven by risk, audit, threat intelligence, and benchmarks, reviewed quarterly."',
+    tags: ['english','fsa','governance'],
+    jaHint: 'セキュリティ継続改善は「リスク・監査・脅威情報・業界標準を基にしたロードマップ＋四半期レビュー」で示す。'
+  },
+  {
+    id: 90, cat: 'fsa', diff: 2,
+    inspector: 'FSA Inspector',
+    context: 'Final inspection question.',
+    q: '"In one sentence, what is the most important principle guiding your security program?"',
+    opts: [
+      '"To protect the company from hackers."',
+      '"To protect the trust of our customers and the integrity of the financial system through proactive, evidence-based, and continuously improving security governance."'
+    ],
+    correct: 1,
+    why: 'Protecting from hackers is tactical. The FSA cares about customer trust, systemic integrity, and governance — values that must be articulated at the CISO level.',
+    phrase: '"Customer trust, systemic integrity, proactive and evidence-based security governance."',
+    tags: ['fsa','governance'],
+    jaHint: 'セキュリティプログラムの最重要原則は「顧客の信頼・金融システムの完全性・証拠に基づくガバナンス」。'
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FILL_QUESTIONS = [
+  // ── ORIGINAL 12 ──────────────────────────────────────────────
+  { sentence: 'Security logs are collected ___ and monitored regularly.', answer: 'centrally', choices: ['centrally', 'manually', 'occasionally', 'externally'], hint: 'All in one place', why: '"Centrally" = 一元管理。FSAは分散ログを嫌う。' },
+  { sentence: 'Access is restricted, approved, ___, and regularly reviewed.', answer: 'logged', choices: ['logged', 'shared', 'hidden', 'delegated'], hint: 'Records every action', why: '"Logged" = 記録済み。ログがないと証跡がない。' },
+  { sentence: 'Governance, policy, and ___ are controlled by our Japan entity.', answer: 'oversight', choices: ['oversight', 'budget', 'hiring', 'marketing'], hint: 'Watching over operations', why: '"Oversight" = 監督。日本法人の監督責任を示す重要ワード。' },
+  { sentence: 'Critical incidents are reported to management and ___ according to Japan requirements.', answer: 'regulators', choices: ['regulators', 'customers', 'vendors', 'auditors'], hint: 'The FSA and other authorities', why: '"Regulators" = 規制当局。FSAへの報告義務を示す。' },
+  { sentence: 'We perform ___ access reviews and keep records of approvals.', answer: 'periodic', choices: ['periodic', 'random', 'annual', 'urgent'], hint: 'Regular intervals', why: '"Periodic" = 定期的。アクセスレビューの定期実施を示す。' },
+  { sentence: 'Overseas access requires management ___ before it is granted.', answer: 'approval', choices: ['approval', 'request', 'notice', 'preference'], hint: 'Permission from above', why: '"Approval" = 承認。管理者承認プロセスを示す。' },
+  { sentence: 'We follow an incident response ___ with defined escalation paths.', answer: 'process', choices: ['process', 'guideline', 'opinion', 'template'], hint: 'A documented procedure', why: '"Process" = 手順。アドホックではなく体系的な対応を示す。' },
+  { sentence: 'The China team operates under Japan ___ and governance.', answer: 'oversight', choices: ['oversight', 'direction', 'permission', 'funding'], hint: 'Supervision and control', why: '"Oversight" = 監督。海外チームも日本の監督下にあることを示す。' },
+  { sentence: 'We are reviewing ___ and can share our enhancement plan.', answer: 'improvements', choices: ['improvements', 'budgets', 'timelines', 'reports'], hint: 'Making things better', why: '"Improvements" = 改善。検査官の指摘を前向きに受け入れる表現。' },
+  { sentence: 'For Japan ___ matters, the Japan entity makes the final decision.', answer: 'regulatory', choices: ['regulatory', 'technical', 'financial', 'operational'], hint: 'Related to rules and compliance', why: '"Regulatory" = 規制上の。日本の規制への対応は日本法人が主導する。' },
+  { sentence: 'Responsibility is defined in our ___ structure.', answer: 'governance', choices: ['governance', 'reporting', 'budget', 'staffing'], hint: 'How decisions are made', why: '"Governance" = ガバナンス構造。責任の所在がどこかを示す枠組み。' },
+  { sentence: 'Alerts are ___ for any suspicious activity in the logs.', answer: 'generated', choices: ['generated', 'ignored', 'archived', 'forwarded'], hint: 'Created automatically', why: '"Generated" = 自動生成される。手動確認でなくアラート体制を示す。' },
+
+  // ── EXPANSION BATCH 2 (13–24) ────────────────────────────────
+  { sentence: 'Critical patches are assessed, tested, and applied within ___ timeframes.', answer: 'defined', choices: ['defined', 'flexible', 'extended', 'optional'], hint: 'Clearly specified limits', why: '"Defined" = 定められた。SLAや期限を事前に設定していることを示す。' },
+  { sentence: 'Vendors are assessed before engagement and ___ to our security requirements.', answer: 'contractually bound', choices: ['contractually bound', 'verbally asked', 'generally expected', 'loosely advised'], hint: 'Legally obligated in writing', why: '"Contractually bound" = 契約で縛られている。口頭ではなく法的義務として示す。' },
+  { sentence: 'Recovery time ___ are defined and tested through regular drills.', answer: 'objectives', choices: ['objectives', 'estimates', 'preferences', 'guidelines'], hint: 'Formal targets for recovery speed', why: '"Objectives" = 目標値（RTO）。曖昧な見積もりではなく定量的な目標を示す。' },
+  { sentence: 'Upon termination, all system access is ___ immediately.', answer: 'revoked', choices: ['revoked', 'suspended', 'reviewed', 'monitored'], hint: 'Permanently cancelled', why: '"Revoked" = 取り消された。一時停止ではなく即時・完全な無効化を示す。' },
+  { sentence: 'Vulnerabilities are identified, risk-rated, tracked, and remediated within defined ___.', answer: 'SLAs', choices: ['SLAs', 'budgets', 'meetings', 'policies'], hint: 'Service level agreements for response time', why: '"SLAs" = サービスレベル合意。対応期限を定量的に示す。' },
+  { sentence: 'All employees receive ___ security awareness training each year.', answer: 'annual', choices: ['annual', 'optional', 'advanced', 'brief'], hint: 'Once per year, every year', why: '"Annual" = 年次。継続的な教育プログラムの基本単位を示す。' },
+  { sentence: 'Risk acceptance decisions are documented with justification, owner, and ___ date.', answer: 'expiry', choices: ['expiry', 'creation', 'review', 'approval'], hint: 'When the acceptance ends', why: '"Expiry" = 期限。リスク受容は永続的でないことを明示する。' },
+  { sentence: 'Cross-border data transfers must be reviewed against Japan\'s data ___ requirements.', answer: 'residency', choices: ['residency', 'sharing', 'quality', 'retention'], hint: 'Where data must physically stay', why: '"Residency" = データ所在地要件。国外移転時の規制上の制約を示す。' },
+  { sentence: 'Audit findings are tracked in a ___ with owners and target dates.', answer: 'register', choices: ['register', 'spreadsheet', 'folder', 'summary'], hint: 'A formal tracking record', why: '"Register" = 管理台帳。非公式なメモではなく正式な追跡ツールを示す。' },
+  { sentence: 'Trading systems are network-___ from corporate systems.', answer: 'segmented', choices: ['segmented', 'separated', 'isolated', 'firewalled'], hint: 'Divided into secure zones', why: '"Segmented" = セグメント分離。物理的・論理的なネットワーク分離を示す技術用語。' },
+  { sentence: 'Penetration tests are conducted by an independent ___ party.', answer: 'third', choices: ['third', 'internal', 'trusted', 'external'], hint: 'Not your own organization', why: '"Third party" = 第三者。独立した立場でのテストを示す。' },
+  { sentence: 'Security ___ such as patch compliance rate and incident count are tracked monthly.', answer: 'KPIs', choices: ['KPIs', 'reports', 'policies', 'summaries'], hint: 'Key performance indicators', why: '"KPIs" = 重要業績評価指標。定量的な管理を示す。' },
+
+  // ── EXPANSION BATCH 3 (25–36) ────────────────────────────────
+  { sentence: 'Privileged accounts are inventoried and credentials managed in a ___ access management system.', answer: 'privileged', choices: ['privileged', 'standard', 'shared', 'central'], hint: 'Specifically for high-power accounts', why: '"Privileged" = 特権。PAM（Privileged Access Management）を示す。' },
+  { sentence: 'New products undergo a formal security risk ___ before launch.', answer: 'assessment', choices: ['assessment', 'review', 'checklist', 'inspection'], hint: 'A structured evaluation of risk', why: '"Assessment" = 評価。非公式なレビューではなく、正式なリスク評価を示す。' },
+  { sentence: 'Security policies are version-___ and reviewed annually.', answer: 'controlled', choices: ['controlled', 'managed', 'updated', 'checked'], hint: 'Tracks changes over time', why: '"Version-controlled" = 版管理。ポリシーの変更履歴を管理していることを示す。' },
+  { sentence: 'EOL systems are subject to ___ controls such as network isolation and enhanced monitoring.', answer: 'compensating', choices: ['compensating', 'additional', 'temporary', 'emergency'], hint: 'Controls that offset a known risk', why: '"Compensating" = 補完的統制。FSAに認められたEOL対策の正式用語。' },
+  { sentence: 'The whistleblower channel allows ___ reporting, protected from retaliation.', answer: 'anonymous', choices: ['anonymous', 'confidential', 'formal', 'written'], hint: 'No name required', why: '"Anonymous" = 匿名。内部通報の信頼性を高める最重要要素。' },
+  { sentence: 'Data is classified into ___ based on sensitivity.', answer: 'tiers', choices: ['tiers', 'groups', 'levels', 'types'], hint: 'Ranked layers from low to high', why: '"Tiers" = 階層。感度に応じた段階的な分類体系を示す。' },
+  { sentence: 'Japan CISO has ___ authority to invoke emergency controls for critical risk.', answer: 'documented', choices: ['documented', 'informal', 'limited', 'delegated'], hint: 'Written down and approved', why: '"Documented" = 文書化された。権限が明文化されていることを規制当局に示す。' },
+  { sentence: 'Vendor contracts include an incident ___ clause requiring timely notification.', answer: 'notification', choices: ['notification', 'escalation', 'termination', 'review'], hint: 'Telling you when something goes wrong', why: '"Notification" = 通知。ベンダーが自社インシデントを速やかに報告する義務を示す。' },
+  { sentence: 'BCP drills are documented with scope, participants, results, and ___ action items.', answer: 'follow-up', choices: ['follow-up', 'pending', 'future', 'assigned'], hint: 'Actions taken after the drill', why: '"Follow-up" = フォローアップ。訓練後の改善措置を記録することを示す。' },
+  { sentence: 'Emergency changes must include a ___ review after implementation.', answer: 'post-implementation', choices: ['post-implementation', 'pre-deployment', 'management', 'quarterly'], hint: 'Review after the change is done', why: '"Post-implementation" = 事後レビュー。緊急変更であっても事後確認が必要。' },
+  { sentence: 'A formal ___ was conducted following the peer firm\'s breach to assess our exposure.', answer: 'threat assessment', choices: ['threat assessment', 'gap analysis', 'risk review', 'audit'], hint: 'Evaluating what threats apply to you', why: '"Threat assessment" = 脅威評価。外部インシデントを受けた自社影響評価の正式用語。' },
+  { sentence: 'The Japan CISO\'s emergency authority is documented in governance policy and approved by the ___.', answer: 'board', choices: ['board', 'CISO', 'HQ', 'committee'], hint: 'The highest decision-making body', why: '"Board" = 取締役会。最高意思決定機関の承認を得ることで権限の正当性を示す。' },
+
+  // ── EXPANSION: CHANGE MANAGEMENT (37–42) ──────────────────────────────────────
+  { sentence: 'All changes must be submitted to the ___ board for review before implementation.', answer: 'change advisory', choices: ['change advisory', 'technical review', 'risk management', 'security steering'], hint: 'Formal body approving changes', why: '"Change advisory" = 変更諮問委員会(CAB)。FSAは変更管理の承認体制を重視する。' },
+  { sentence: 'A ___ plan must be documented before any change is approved.', answer: 'rollback', choices: ['rollback', 'recovery', 'backup', 'contingency'], hint: 'How to undo the change', why: '"Rollback" = 切り戻し計画。変更失敗時に元の状態に戻す手順を示す。' },
+  { sentence: 'During peak trading periods, a change ___ period is enforced to minimize risk.', answer: 'freeze', choices: ['freeze', 'blackout', 'hold', 'moratorium'], hint: 'No changes allowed during this time', why: '"Freeze" = 変更凍結期間。重要時期の変更禁止をFSAに説明する用語。' },
+  { sentence: 'Each change must have a unique ___ record documenting scope, risk, and approval.', answer: 'change', choices: ['change', 'incident', 'request', 'service'], hint: 'Tracks the modification formally', why: '"Change" record = 変更記録。変更の証跡として必須のドキュメント。' },
+  { sentence: 'Emergency changes are subject to ___ review within 24 hours of implementation.', answer: 'post-change', choices: ['post-change', 'pre-deployment', 'immediate', 'weekly'], hint: 'Review that happens after deployment', why: '"Post-change" review = 事後レビュー。緊急変更でも事後確認が必要とFSAは要求する。' },
+  { sentence: 'The change management process includes a formal ___ assessment for all production changes.', answer: 'impact', choices: ['impact', 'cost', 'resource', 'timeline'], hint: 'What effect will the change have?', why: '"Impact" assessment = 影響評価。変更による業務・セキュリティへの影響を事前に評価する。' },
+
+  // ── EXPANSION: SIEM & LOG MANAGEMENT (43–48) ──────────────────────────────────────
+  { sentence: 'Security logs must be retained for a minimum ___ period defined by regulation.', answer: 'retention', choices: ['retention', 'archival', 'storage', 'holding'], hint: 'How long logs are kept', why: '"Retention" period = 保存期間。FSAはログの保存期間を明確に要求する。' },
+  { sentence: 'The SIEM uses ___ rules to link related events across multiple log sources.', answer: 'correlation', choices: ['correlation', 'aggregation', 'parsing', 'filtering'], hint: 'Connecting events from different sources', why: '"Correlation" rules = 相関ルール。複数ログを横断した脅威検知を示す。' },
+  { sentence: 'Each SIEM ___ case defines the logic and conditions that trigger a security alert.', answer: 'use', choices: ['use', 'detection', 'alert', 'threat'], hint: 'Scenario that defines alert conditions', why: '"Use" case = ユースケース。SIEMの検知シナリオを文書化した設計。' },
+  { sentence: 'Alert ___ is performed regularly to reduce false positives and maintain detection quality.', answer: 'tuning', choices: ['tuning', 'filtering', 'silencing', 'adjustment'], hint: 'Fine-tuning alert accuracy', why: '"Tuning" = チューニング。誤検知を減らし検知精度を維持するプロセス。' },
+  { sentence: 'Security logs from all systems are ___ to a centralized SIEM platform.', answer: 'forwarded', choices: ['forwarded', 'uploaded', 'sent', 'copied'], hint: 'Transferred to central location', why: '"Forwarded" = 転送される。ログの一元集約を示す技術的用語。' },
+  { sentence: 'The SIEM ___ provides real-time visibility into security events across the environment.', answer: 'dashboard', choices: ['dashboard', 'console', 'panel', 'interface'], hint: 'Visual overview screen', why: '"Dashboard" = ダッシュボード。リアルタイム可視化ツールとしてFSAに示す。' },
+
+  // ── EXPANSION: IDENTITY & AUTHENTICATION (49–54) ──────────────────────────────────────
+  { sentence: 'All privileged access requires ___ authentication with at least two verification factors.', answer: 'multi-factor', choices: ['multi-factor', 'two-step', 'enhanced', 'strong'], hint: 'More than one proof of identity', why: '"Multi-factor" authentication = 多要素認証(MFA)。FSAは特権アクセスへのMFA要件を確認する。' },
+  { sentence: 'A ___ sign-on solution allows users to authenticate once and access multiple systems.', answer: 'single', choices: ['single', 'unified', 'federated', 'central'], hint: 'One login for all systems', why: '"Single" sign-on = シングルサインオン(SSO)。認証の一元管理とアクセス制御を示す。' },
+  { sentence: 'Privileged user sessions are ___ and recorded for audit and forensic purposes.', answer: 'monitored', choices: ['monitored', 'tracked', 'watched', 'observed'], hint: 'Actively watched in real-time', why: '"Monitored" = 監視される。特権セッションの録画・監視をFSAに説明する。' },
+  { sentence: '___ access policies enforce step-up authentication based on risk signals.', answer: 'Conditional', choices: ['Conditional', 'Adaptive', 'Dynamic', 'Context-based'], hint: 'Access depends on risk conditions', why: '"Conditional" access = 条件付きアクセス。リスクに応じた認証強化ポリシーを示す。' },
+  { sentence: 'User accounts follow a formal ___ management process from creation to deactivation.', answer: 'lifecycle', choices: ['lifecycle', 'identity', 'account', 'access'], hint: 'Full account journey from start to end', why: '"Lifecycle" management = ライフサイクル管理。アカウントの作成から削除までの体系的管理。' },
+  { sentence: 'Critical systems support ___ authentication to eliminate password-based risks.', answer: 'passwordless', choices: ['passwordless', 'certificate-based', 'token-based', 'biometric'], hint: 'No password required', why: '"Passwordless" = パスワードレス認証。パスワード漏洩リスクを排除する先進的認証方式。' },
+
+  // ── EXPANSION: CRYPTOGRAPHY & KEY MANAGEMENT (55–60) ──────────────────────────────────────
+  { sentence: 'Encryption keys are stored and managed in a dedicated ___ security module.', answer: 'hardware', choices: ['hardware', 'software', 'cloud', 'virtual'], hint: 'Physical device for key storage', why: '"Hardware" security module (HSM) = ハードウェアセキュリティモジュール。鍵の物理的保護を示す。' },
+  { sentence: 'Encryption keys undergo ___ rotation on a defined schedule to limit exposure.', answer: 'periodic', choices: ['periodic', 'automatic', 'scheduled', 'regular'], hint: 'At regular intervals', why: '"Periodic" rotation = 定期的な鍵更新。鍵漏洩リスクを限定するための重要な運用プロセス。' },
+  { sentence: 'All data stored in databases is protected with ___ at rest encryption.', answer: 'AES-256', choices: ['AES-256', 'RSA-2048', '3DES', 'AES-128'], hint: 'Strong symmetric encryption standard', why: '"AES-256" = AES-256暗号化。保存データ保護の業界標準としてFSAに示す。' },
+  { sentence: 'All data transmitted between systems uses ___ to protect it in transit.', answer: 'TLS', choices: ['TLS', 'SSL', 'HTTPS', 'IPsec'], hint: 'Secure transport layer protocol', why: '"TLS" = トランスポート層セキュリティ。通信経路の暗号化に使用する標準プロトコル。' },
+  { sentence: 'TLS ___ are managed centrally with automated renewal to prevent expiry.', answer: 'certificates', choices: ['certificates', 'keys', 'tokens', 'credentials'], hint: 'Digital proof of identity', why: '"Certificates" = 証明書。TLS証明書の中央管理と自動更新を示す運用プロセス。' },
+  { sentence: 'The cryptographic ___ policy defines which algorithms are approved and prohibited.', answer: 'algorithm', choices: ['algorithm', 'encryption', 'standard', 'protocol'], hint: 'Mathematical formula for encryption', why: '"Algorithm" policy = アルゴリズムポリシー。使用可能な暗号化方式を定義する重要文書。' },
+
+  // ── EXPANSION: CLOUD SECURITY GOVERNANCE (61–66) ──────────────────────────────────────
+  { sentence: 'Cloud security follows a ___ responsibility model where obligations are divided between provider and customer.', answer: 'shared', choices: ['shared', 'divided', 'joint', 'split'], hint: 'Both parties have obligations', why: '"Shared" responsibility = 共有責任モデル。クラウドセキュリティの責任範囲をFSAに説明する。' },
+  { sentence: 'A cloud security ___ management tool continuously checks for misconfigurations.', answer: 'posture', choices: ['posture', 'compliance', 'configuration', 'assessment'], hint: 'Overall security stance in cloud', why: '"Posture" management (CSPM) = クラウドセキュリティポスチャ管理。設定ミスの継続的検出を示す。' },
+  { sentence: 'All cloud deployments are assessed against the company\'s cloud ___ baseline.', answer: 'security', choices: ['security', 'compliance', 'configuration', 'architecture'], hint: 'Minimum required protections', why: '"Security" baseline = セキュリティベースライン。クラウド設定の最低基準を示す。' },
+  { sentence: 'Cloud ___ is managed through a centralized policy to ensure consistent controls.', answer: 'governance', choices: ['governance', 'management', 'oversight', 'administration'], hint: 'Rules and oversight for cloud use', why: '"Governance" = クラウドガバナンス。クラウド全体の一元的な管理体制をFSAに示す。' },
+  { sentence: 'In a ___ cloud environment, a unified security framework applies across all platforms.', answer: 'multi-cloud', choices: ['multi-cloud', 'hybrid', 'private', 'federated'], hint: 'Multiple cloud providers used', why: '"Multi-cloud" = マルチクラウド環境。複数クラウドでの統一セキュリティ管理を示す。' },
+  { sentence: 'A formal ___ review is performed before any new cloud service is adopted.', answer: 'security', choices: ['security', 'vendor', 'compliance', 'architecture'], hint: 'Evaluating risk before adoption', why: '"Security" review = セキュリティレビュー。新規クラウドサービス採用前の必須評価を示す。' },
+
+  // ── EXPANSION: THIRD-PARTY RISK MANAGEMENT (67–72) ──────────────────────────────────────
+  { sentence: 'New vendors undergo a security ___ assessment before being approved for engagement.', answer: 'due diligence', choices: ['due diligence', 'background', 'risk', 'compliance'], hint: 'Thorough pre-engagement evaluation', why: '"Due diligence" = デューデリジェンス。ベンダー採用前の徹底調査をFSAは確認する。' },
+  { sentence: 'Vendors are classified into risk ___ based on the criticality of their services.', answer: 'tiers', choices: ['tiers', 'levels', 'categories', 'groups'], hint: 'Ranked layers by importance', why: '"Tiers" = リスク階層。ベンダーの重要度に応じたリスク分類を示す。' },
+  { sentence: 'A security ___ is sent to all critical vendors annually to assess their controls.', answer: 'questionnaire', choices: ['questionnaire', 'survey', 'checklist', 'assessment'], hint: 'Formal written set of security questions', why: '"Questionnaire" = セキュリティ質問票。ベンダーの管理策を年次評価する正式ツール。' },
+  { sentence: 'Vendor risk is ___ on a scheduled basis to reflect changes in their security posture.', answer: 'reassessed', choices: ['reassessed', 'reviewed', 'monitored', 'evaluated'], hint: 'Evaluated again periodically', why: '"Reassessed" = 再評価される。ベンダーリスクの定期的な再評価をFSAに示す。' },
+  { sentence: 'Upon vendor ___, all data and access must be securely recovered or destroyed.', answer: 'offboarding', choices: ['offboarding', 'termination', 'exit', 'removal'], hint: 'Formal process when vendor relationship ends', why: '"Offboarding" = オフボーディング。契約終了時のデータ返却・削除とアクセス遮断プロセス。' },
+  { sentence: 'Vendor contracts include a right to ___ clause allowing security assessments.', answer: 'audit', choices: ['audit', 'inspect', 'review', 'assess'], hint: 'Permission to check their work', why: '"Audit" right = 監査権。自社がベンダーのセキュリティを検証できる権利をFSAに示す。' },
+
+  // ── EXPANSION: DATA LOSS PREVENTION (73–78) ──────────────────────────────────────
+  { sentence: 'A DLP solution monitors and ___ unauthorized transfers of sensitive data.', answer: 'blocks', choices: ['blocks', 'prevents', 'stops', 'intercepts'], hint: 'Actively stops data leaving', why: '"Blocks" = ブロックする。DLPが情報漏洩を能動的に防止することを示す。' },
+  { sentence: 'Endpoint DLP policies prevent sensitive data from being copied to ___ storage.', answer: 'removable', choices: ['removable', 'external', 'portable', 'USB'], hint: 'Detachable devices like USB drives', why: '"Removable" storage = リムーバブルストレージ。USBへのデータコピー防止をFSAに示す。' },
+  { sentence: 'DLP rules are based on data ___ labels applied during document creation.', answer: 'classification', choices: ['classification', 'sensitivity', 'protection', 'marking'], hint: 'How data is categorized by sensitivity', why: '"Classification" = データ分類。ラベルに基づくDLPルール適用を示す。' },
+  { sentence: 'DLP alerts are reviewed daily to detect potential data ___ attempts.', answer: 'exfiltration', choices: ['exfiltration', 'leakage', 'theft', 'transfer'], hint: 'Unauthorized data moving outside', why: '"Exfiltration" = データ持ち出し。不正なデータ外部転送をFSAに説明する正式用語。' },
+  { sentence: 'Email DLP ___ suspicious outbound emails containing sensitive information for review.', answer: 'quarantines', choices: ['quarantines', 'blocks', 'flags', 'holds'], hint: 'Temporarily holds for inspection', why: '"Quarantines" = 隔離する。疑わしいメールを検疫しレビュー待ちにするDLP機能。' },
+  { sentence: 'DLP incident reports are reviewed by the security team and reported to ___ management.', answer: 'senior', choices: ['senior', 'line', 'IT', 'risk'], hint: 'Upper-level executives', why: '"Senior" management = 上級管理職。DLPインシデントの経営層への報告体制を示す。' },
+
+  // ── EXPANSION: RED TEAM & OFFENSIVE SECURITY (79–84) ──────────────────────────────────────
+  { sentence: 'A ___ team exercise simulates real-world attacks to test defensive capabilities.', answer: 'red', choices: ['red', 'blue', 'purple', 'white'], hint: 'Offensive attack simulation team', why: '"Red" team = レッドチーム。実際の攻撃をシミュレーションして防御力をテストする。' },
+  { sentence: 'A ___ team exercise combines offensive and defensive teams to improve detection.', answer: 'purple', choices: ['purple', 'red', 'blue', 'hybrid'], hint: 'Blend of attack and defense teams', why: '"Purple" team = パープルチーム。攻撃と防御が連携して検知能力を向上させる演習。' },
+  { sentence: 'A ___ exercise is a discussion-based test of incident response without live systems.', answer: 'tabletop', choices: ['tabletop', 'simulation', 'walkthrough', 'dry-run'], hint: 'Meeting-room discussion-based test', why: '"Tabletop" exercise = 図上演習。システムを使わずシナリオを議論するインシデント訓練。' },
+  { sentence: 'Red team findings are tracked in a ___ that is reviewed and remediated by owners.', answer: 'register', choices: ['register', 'report', 'tracker', 'log'], hint: 'Formal tracking document', why: '"Register" = 管理台帳。レッドチームの指摘事項を追跡管理する正式なツール。' },
+  { sentence: 'Attack ___ tools mimic techniques used by real threat actors to test controls.', answer: 'simulation', choices: ['simulation', 'emulation', 'testing', 'modeling'], hint: 'Imitating real attack methods', why: '"Simulation" = 攻撃シミュレーション。実際の脅威者の手法を模倣したテスト手法。' },
+  { sentence: 'Red team findings are ___ in the next annual test to verify that fixes were effective.', answer: 'retested', choices: ['retested', 'reviewed', 'verified', 'reassessed'], hint: 'Tested again to confirm fix', why: '"Retested" = 再テストされる。修正の有効性を次回演習で確認するプロセス。' },
+
+  // ── EXPANSION: REGULATORY REPORTING & DISCLOSURE (85–90) ──────────────────────────────────────
+  { sentence: 'A ___ breach must be reported to the FSA within the regulatory notification window.', answer: 'material', choices: ['material', 'significant', 'major', 'critical'], hint: 'Sufficiently serious to require disclosure', why: '"Material" breach = 重大なインシデント。FSAへの報告義務が発生するレベルの侵害を示す。' },
+  { sentence: 'The incident ___ obligation requires notification to regulators within a defined timeframe.', answer: 'disclosure', choices: ['disclosure', 'reporting', 'notification', 'escalation'], hint: 'Duty to formally reveal information', why: '"Disclosure" obligation = 開示義務。規制当局への正式な情報開示義務を示す。' },
+  { sentence: 'We have a documented process to assess whether an incident meets the ___ for regulatory reporting.', answer: 'threshold', choices: ['threshold', 'criteria', 'standard', 'benchmark'], hint: 'Minimum level that triggers a requirement', why: '"Threshold" = 閾値。規制報告が必要かどうかを判断する基準値を示す。' },
+  { sentence: 'All regulatory ___ are logged with timestamps to demonstrate compliance with notification windows.', answer: 'notifications', choices: ['notifications', 'reports', 'disclosures', 'submissions'], hint: 'Official communications to regulators', why: '"Notifications" = 通知。規制当局への連絡をタイムスタンプ付きで記録する証跡管理。' },
+  { sentence: 'The CISO has authority to ___ to the board immediately for material security incidents.', answer: 'escalate', choices: ['escalate', 'report', 'notify', 'disclose'], hint: 'Urgently raise to higher level', why: '"Escalate" = エスカレーションする。重大インシデントを即座に経営層に上げる権限を示す。' },
+  { sentence: 'Regulatory reporting ___ are tracked in a compliance calendar to ensure timely submission.', answer: 'deadlines', choices: ['deadlines', 'timelines', 'schedules', 'dates'], hint: 'Due dates that cannot be missed', why: '"Deadlines" = 期限。規制報告の提出期限を見逃さないよう管理するプロセス。' },
+
+  // ── EXPANSION: RISK APPETITE & TOLERANCE (91–96) ──────────────────────────────────────
+  { sentence: 'The board has approved a formal risk ___ statement defining acceptable risk levels.', answer: 'appetite', choices: ['appetite', 'tolerance', 'threshold', 'framework'], hint: 'How much risk is acceptable', why: '"Appetite" statement = リスク選好度表明。取締役会が承認した許容リスクレベルの文書。' },
+  { sentence: 'Risk ___ defines the maximum deviation from the appetite before escalation is required.', answer: 'tolerance', choices: ['tolerance', 'threshold', 'limit', 'boundary'], hint: 'Acceptable deviation from risk appetite', why: '"Tolerance" = リスク許容度。リスク選好からの最大許容偏差を定義する概念。' },
+  { sentence: 'Key risk ___ provide early warning signals when risk levels approach tolerance limits.', answer: 'indicators', choices: ['indicators', 'metrics', 'signals', 'measures'], hint: 'Warning signals for rising risk', why: '"Indicators" (KRIs) = 主要リスク指標。リスクが許容限度に近づいた際の早期警告を提供する。' },
+  { sentence: 'Each risk has a designated ___ who is accountable for monitoring and mitigation.', answer: 'owner', choices: ['owner', 'manager', 'sponsor', 'custodian'], hint: 'Person responsible for that risk', why: '"Owner" = リスクオーナー。各リスクの監視と軽減に責任を持つ担当者を示す。' },
+  { sentence: 'The risk appetite is formally ___ at least annually by the board.', answer: 'reviewed', choices: ['reviewed', 'updated', 'approved', 'assessed'], hint: 'Examined and confirmed periodically', why: '"Reviewed" = 定期的に見直される。リスク選好度の少なくとも年次レビューをFSAに示す。' },
+  { sentence: 'KRI ___ triggers require immediate escalation to the risk committee.', answer: 'breach', choices: ['breach', 'violation', 'exceedance', 'alert'], hint: 'When a limit is exceeded', why: '"Breach" = 超過。KRIが閾値を超えた際のリスク委員会への即時エスカレーションを示す。' },
+
+  // ── EXPANSION: CYBER RESILIENCE & RECOVERY (97–102) ──────────────────────────────────────
+  { sentence: 'Systems have a defined RTO which specifies how quickly they must be ___ after an outage.', answer: 'restored', choices: ['restored', 'recovered', 'restarted', 'rebuilt'], hint: 'Brought back to working state', why: '"Restored" = 復旧される。RTO（目標復旧時間）が示す復旧完了の目標状態を示す。' },
+  { sentence: 'The RPO defines the maximum ___ of data loss acceptable during a disruption.', answer: 'amount', choices: ['amount', 'period', 'volume', 'duration'], hint: 'Quantity of data that can be lost', why: '"Amount" of data loss = データ損失量。RPO（目標復旧時点）が定義する許容データ損失の上限。' },
+  { sentence: 'Critical systems are designed with ___ capabilities to maintain availability.', answer: 'failover', choices: ['failover', 'redundancy', 'backup', 'replication'], hint: 'Automatic switch to backup system', why: '"Failover" = フェイルオーバー。障害時に自動的にバックアップへ切り替わる機能を示す。' },
+  { sentence: 'Backup ___ is verified through regular restore tests to confirm data can be recovered.', answer: 'integrity', choices: ['integrity', 'validity', 'reliability', 'completeness'], hint: 'Confirming backups are usable', why: '"Integrity" = 整合性。バックアップデータが実際に復元可能かを定期検証することを示す。' },
+  { sentence: 'Recovery ___ are conducted at least annually to validate business continuity plans.', answer: 'drills', choices: ['drills', 'tests', 'exercises', 'simulations'], hint: 'Practice runs for recovery procedures', why: '"Drills" = 訓練演習。BCP計画の有効性を年次検証するための復旧演習を示す。' },
+  { sentence: 'Cyber ___ testing ensures systems can withstand and recover from sustained attacks.', answer: 'resilience', choices: ['resilience', 'stress', 'penetration', 'endurance'], hint: 'Ability to withstand and recover', why: '"Resilience" testing = サイバー耐性テスト。攻撃に耐え回復する能力を検証するテスト。' },
+
+  // ── EXPANSION: SECURITY GOVERNANCE & BOARD REPORTING (103–108) ──────────────────────────────────────
+  { sentence: 'The CISO presents a security ___ to the board quarterly covering key risks and metrics.', answer: 'dashboard', choices: ['dashboard', 'report', 'summary', 'briefing'], hint: 'Visual overview of security status', why: '"Dashboard" = ダッシュボード。取締役会への四半期セキュリティ状況の視覚的報告を示す。' },
+  { sentence: 'Board security reports include an ___ summary for non-technical directors.', answer: 'executive', choices: ['executive', 'concise', 'simplified', 'overview'], hint: 'Written for top leadership', why: '"Executive" summary = エグゼクティブサマリー。非技術系役員向けの簡潔な要約を示す。' },
+  { sentence: 'Security risks are assessed for ___ to determine which require board-level attention.', answer: 'materiality', choices: ['materiality', 'severity', 'significance', 'priority'], hint: 'Whether risk is important enough to disclose', why: '"Materiality" = 重要性。取締役会レベルの注意を要するリスクかを判断する基準。' },
+  { sentence: 'Board members sign an annual ___ confirming they have reviewed the security framework.', answer: 'attestation', choices: ['attestation', 'declaration', 'confirmation', 'certification'], hint: 'Formal signed statement of acknowledgment', why: '"Attestation" = 証明・確認署名。取締役がセキュリティフレームワークを確認した証跡。' },
+  { sentence: 'Security ___ such as mean time to detect and mean time to respond are reported to the board.', answer: 'metrics', choices: ['metrics', 'KPIs', 'indicators', 'statistics'], hint: 'Measurable security performance data', why: '"Metrics" = セキュリティ指標。MTTD・MTTRなどの定量的な指標を取締役会に報告する。' },
+  { sentence: 'The board receives an annual ___ of the overall information security program effectiveness.', answer: 'assessment', choices: ['assessment', 'review', 'evaluation', 'audit'], hint: 'Structured evaluation of program health', why: '"Assessment" = 評価報告。情報セキュリティプログラム全体の有効性を取締役会に年次報告する。' },
+];
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let state = {
+  score: { correct: 0, wrong: 0 },
+  streak: 0, bestStreak: 0,
+  skillScores: { fsa: [0,0], evidence: [0,0], pressure: [0,0], governance: [0,0], crossborder: [0,0] },
+  flags: new Set(),
+  history: [],   // {id, correct}
+  quizQueue: [],
+  quizIdx: 0,
+  answered: false,
+  rpIdx: 0,
+  fillIdx: 0,
+  fillAnswered: false,
+};
+
+// load from localStorage
+try {
+  const saved = localStorage.getItem('fsa_state');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    state = { ...state, ...parsed, flags: new Set(parsed.flags || []) };
+  }
+} catch(e) {}
+
+function saveState() {
+  try {
+    const s = { ...state, flags: [...state.flags] };
+    localStorage.setItem('fsa_state', JSON.stringify(s));
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════
+// SPEECH
+// ═══════════════════════════════════════════════
+let voices = [], ttsActive = false, micActive = false;
+let recognition = null;
+let currentMicTarget = null;
+
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function loadVoices() {
+  voices = window.speechSynthesis.getVoices();
+  const sel = document.getElementById('voice-select');
+  if (!sel || voices.length === 0) return;
+  sel.innerHTML = '';
+  const en = voices.filter(v => v.lang.startsWith('en'));
+  const rest = voices.filter(v => !v.lang.startsWith('en'));
+  [...en, ...rest].forEach(v => {
+    const o = document.createElement('option');
+    o.value = v.name;
+    o.textContent = `${v.name} (${v.lang})`;
+    if (v.lang === 'en-US' && !sel.value) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function speak(text, onEnd) {
+  window.speechSynthesis.cancel();
+  if (!text.trim()) return;
+  const utt = new SpeechSynthesisUtterance(text.replace(/["""]/g, ''));
+  const sel = document.getElementById('voice-select');
+  const chosen = sel && voices.find(v => v.name === sel.value);
+  if (chosen) utt.voice = chosen;
+  const rateEl = document.getElementById('set-rate');
+  utt.rate = rateEl ? parseFloat(rateEl.value) : 0.9;
+  utt.lang = 'en-US';
+  if (onEnd) utt.onend = onEnd;
+  window.speechSynthesis.speak(utt);
+}
+
+function toggleTTS() {
+  const btn = document.getElementById('btn-tts');
+  ttsActive = !ttsActive;
+  btn.classList.toggle('active', ttsActive);
+  btn.textContent = ttsActive ? '🔊 On' : '🔊 Read aloud';
+  if (ttsActive) speakCurrentQuestion();
+}
+
+function toggleFillTTS() {
+  const btn = document.getElementById('btn-fill-tts');
+  ttsActive = !ttsActive;
+  btn.classList.toggle('active', ttsActive);
+  if (ttsActive) {
+    const q = state.fillQueue ? state.fillQueue[state.fillIdx] : FILL_QUESTIONS[state.fillIdx];
+    if (q) speak(q.sentence.replace('___', 'blank'));
+  }
+}
+
+function speakCurrentQuestion() {
+  if (!ttsActive) return;
+  const q = state.quizQueue[state.quizIdx];
+  if (!q) return;
+  const text = (q.context ? q.context + '. ' : '') + q.q;
+  speak(text);
+}
+
+function setupMic(transcriptEl, onResult) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    transcriptEl.textContent = 'Mic not supported in this browser';
+    return null;
+  }
+  const r = new SpeechRecognition();
+  r.lang = 'en-US';
+  r.continuous = false;
+  r.interimResults = true;
+  r.onresult = e => {
+    const t = Array.from(e.results).map(r => r[0].transcript).join('');
+    transcriptEl.textContent = t;
+    if (e.results[e.results.length-1].isFinal) onResult(t);
+  };
+  r.onerror = () => { transcriptEl.textContent = 'Mic error — try again'; };
+  return r;
+}
+
+function toggleMic() {
+  const btn = document.getElementById('btn-mic');
+  const transcript = document.getElementById('mic-transcript');
+  if (micActive) {
+    if (recognition) recognition.stop();
+    micActive = false;
+    btn.classList.remove('recording');
+    btn.textContent = '🎤 Speak answer';
+    return;
+  }
+  recognition = setupMic(transcript, (text) => {
+    micActive = false;
+    btn.classList.remove('recording');
+    btn.textContent = '🎤 Speak answer';
+    // match to option
+    const q = state.quizQueue[state.quizIdx];
+    if (!q || state.answered) return;
+    const t = text.toLowerCase();
+    let picked = -1;
+    q.opts.forEach((opt, i) => {
+      if (opt.toLowerCase().split(' ').filter(w => w.length > 4).some(w => t.includes(w))) picked = i;
+    });
+    if (picked >= 0) selectOption(picked);
+  });
+  if (recognition) {
+    recognition.start();
+    micActive = true;
+    btn.classList.add('recording');
+    btn.textContent = '🎤 Listening…';
+  }
+}
+
+function toggleFillMic() {
+  const btn = document.getElementById('btn-fill-mic');
+  const transcript = document.getElementById('fill-mic-transcript');
+  if (micActive) {
+    if (recognition) recognition.stop();
+    micActive = false;
+    btn.classList.remove('recording');
+    btn.textContent = '🎤 Speak answer';
+    return;
+  }
+  recognition = setupMic(transcript, (text) => {
+    // Match spoken word to a choice button
+    const q = state.fillQueue ? state.fillQueue[state.fillIdx] : FILL_QUESTIONS[state.fillIdx];
+    if (!q || state.fillAnswered) return;
+    const spoken = text.toLowerCase().trim();
+    const matched = q.choices.find(c => c.toLowerCase() === spoken || spoken.includes(c.toLowerCase()));
+    if (matched) {
+      const allBtns = document.getElementById('fill-options').querySelectorAll('.option-btn');
+      allBtns.forEach(btn => {
+        const label = btn.textContent.trim().slice(2).trim();
+        if (label.toLowerCase() === matched.toLowerCase()) btn.click();
+      });
+    }
+    micActive = false;
+    btn.classList.remove('recording');
+    btn.textContent = '🎤 Speak answer';
+  });
+  if (recognition) {
+    recognition.start();
+    micActive = true;
+    btn.classList.add('recording');
+    btn.textContent = '🎤 Listening…';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelector(`[data-screen="${name}"]`).classList.add('active');
+
+  if (name === 'quiz') initQuiz();
+  if (name === 'fill') initFill();
+  if (name === 'dashboard') updateDashboard();
+}
+
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => switchScreen(b.dataset.screen));
+});
+
+// ═══════════════════════════════════════════════
+// QUIZ
+// ═══════════════════════════════════════════════
+function buildQueue() {
+  const mode = (document.getElementById('set-mode') || {}).value || 'all';
+  let pool = [...QUESTIONS];
+  if (mode === 'weak') pool = pool.filter(q => state.flags.has(q.id));
+  else if (mode === 'fsa') pool = pool.filter(q => q.tags.includes('fsa'));
+  else if (mode === 'english') pool = pool.filter(q => q.cat === 'english');
+  if (!pool.length) pool = [...QUESTIONS];
+  // shuffle
+  return pool.sort(() => Math.random() - 0.5);
+}
+
+function initQuiz() {
+  state.quizQueue = buildQueue();
+  state.quizIdx = 0;
+  state.answered = false;
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = state.quizQueue[state.quizIdx];
+  if (!q) { showResult(); return; }
+
+  state.answered = false;
+  document.getElementById('btn-next-q').style.display = 'none';
+
+  // meta
+  const catMap = { fsa: 'fsa', pressure: 'pressure', english: 'english', evidence: 'fsa', 'cross-border': 'fsa' };
+  const badge = document.getElementById('q-cat-badge');
+  badge.textContent = q.cat.toUpperCase().replace('-', ' ');
+  badge.className = 'cat-badge ' + (catMap[q.cat] || 'fsa');
+
+  const dots = document.getElementById('q-diff');
+  dots.innerHTML = [1,2,3].map(i => `<div class="diff-dot ${i <= q.diff ? 'on' : ''}"></div>`).join('');
+
+  document.getElementById('q-progress').textContent = `Q ${state.quizIdx + 1} / ${state.quizQueue.length}`;
+  document.getElementById('q-prog-fill').style.width = (state.quizIdx / state.quizQueue.length * 100) + '%';
+
+  // card
+  const card = document.getElementById('quiz-card');
+  card.className = 'card' + (q.cat === 'pressure' ? ' pressure' : q.cat === 'english' ? ' english-card' : '');
+
+  document.getElementById('q-inspector-label').textContent = q.inspector;
+
+  const ctx = document.getElementById('q-context');
+  if (q.context) { ctx.style.display = 'block'; ctx.textContent = q.context; }
+  else ctx.style.display = 'none';
+
+  document.getElementById('q-text').textContent = q.q;
+
+  // flag btn
+  const flagBtn = document.getElementById('flag-btn');
+  flagBtn.classList.toggle('flagged', state.flags.has(q.id));
+  flagBtn.textContent = state.flags.has(q.id) ? '🚩' : '🏳';
+
+  // options
+  const opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-key">${String.fromCharCode(65+i)}.</span><span>${opt}</span>`;
+    btn.onclick = () => selectOption(i);
+    opts.appendChild(btn);
+  });
+
+  // feedback reset
+  const fb = document.getElementById('q-feedback');
+  fb.className = 'feedback';
+
+  // auto-read
+  const autoread = (document.getElementById('set-autoread') || {}).value;
+  if (autoread === '1' || ttsActive) speakCurrentQuestion();
+
+  updateHeader();
+}
+
+function selectOption(idx) {
+  if (state.answered) return;
+  state.answered = true;
+
+  const q = state.quizQueue[state.quizIdx];
+  const correct = idx === q.correct;
+  const opts = document.querySelectorAll('.option-btn');
+
+  opts.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === idx && correct) btn.classList.add('selected-correct');
+    else if (i === idx && !correct) btn.classList.add('selected-wrong');
+    else if (i === q.correct) btn.classList.add('show-correct');
+  });
+
+  // update scores
+  if (correct) {
+    state.score.correct++;
+    state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+  } else {
+    state.score.wrong++;
+    state.streak = 0;
+  }
+
+  // skill update
+  q.tags.forEach(tag => {
+    const map = { fsa:'fsa', evidence:'evidence', pressure:'pressure', governance:'governance', 'cross-border':'crossborder', english:'fsa' };
+    const key = map[tag];
+    if (key && state.skillScores[key]) {
+      state.skillScores[key][1]++;
+      if (correct) state.skillScores[key][0]++;
+    }
+  });
+
+  state.history.push({ id: q.id, correct });
+
+  // feedback
+  const fb = document.getElementById('q-feedback');
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  document.getElementById('fb-verdict').textContent = correct ? '✅ Correct' : '✗ Incorrect';
+  document.getElementById('fb-why').textContent = q.why;
+
+  const phrase = document.getElementById('fb-phrase');
+  phrase.innerHTML = `<div class="key-phrase-label">Key Phrase</div><div class="key-phrase-text">${q.phrase}</div>`;
+
+  const showJa = (document.getElementById('set-ja') || {}).value === '1';
+  if (showJa && q.jaHint) {
+    phrase.innerHTML += `<div style="margin-top:10px;font-size:11px;color:var(--ink3);">${q.jaHint}</div>`;
+  }
+
+  // speak feedback
+  if (ttsActive) speak((correct ? 'Correct. ' : 'Incorrect. ') + q.why);
+
+  document.getElementById('btn-next-q').style.display = 'inline-block';
+  saveState();
+  updateHeader();
+}
+
+function nextQuestion() {
+  state.quizIdx++;
+  if (state.quizIdx >= state.quizQueue.length) {
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function toggleFlag() {
+  const q = state.quizQueue[state.quizIdx];
+  if (!q) return;
+  if (state.flags.has(q.id)) state.flags.delete(q.id);
+  else state.flags.add(q.id);
+  const btn = document.getElementById('flag-btn');
+  btn.classList.toggle('flagged', state.flags.has(q.id));
+  btn.textContent = state.flags.has(q.id) ? '🚩' : '🏳';
+  saveState();
+}
+
+function showResult() {
+  const total = state.score.correct + state.score.wrong;
+  const pct = total ? Math.round(state.score.correct / total * 100) : 0;
+  const grade = pct >= 90 ? 'A' : pct >= 75 ? 'B' : pct >= 60 ? 'C' : 'D';
+  document.getElementById('res-grade').textContent = grade;
+  document.getElementById('res-grade').style.color = pct >= 75 ? 'var(--green)' : pct >= 60 ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('res-label').textContent = `${pct}% — ${total} questions`;
+  document.getElementById('res-correct').textContent = state.score.correct;
+  document.getElementById('res-wrong').textContent = state.score.wrong;
+  document.getElementById('res-streak').textContent = state.bestStreak;
+  document.getElementById('res-level').textContent = getLevel();
+  document.getElementById('result-overlay').classList.add('show');
+}
+
+function closeResult() {
+  document.getElementById('result-overlay').classList.remove('show');
+  switchScreen('dashboard');
+}
+
+function restartQuiz() {
+  document.getElementById('result-overlay').classList.remove('show');
+  state.score = { correct: 0, wrong: 0 };
+  state.streak = 0;
+  initQuiz();
+}
+
+// ═══════════════════════════════════════════════
+// FILL IN BLANK
+// ═══════════════════════════════════════════════
+function initFill() {
+  // fillQueueをシャッフルして作成
+  state.fillQueue = [...FILL_QUESTIONS].sort(() => Math.random() - 0.5);
+  state.fillIdx = 0;
+  state.fillAnswered = false;
+  renderFill();
+}
+
+function renderFill() {
+  const q = state.fillQueue ? state.fillQueue[state.fillIdx] : FILL_QUESTIONS[state.fillIdx];
+  if (!q) { alert('All fill-in questions complete!'); switchScreen('dashboard'); return; }
+
+  state.fillAnswered = false;
+  document.getElementById('fill-progress').textContent = `${state.fillIdx + 1} / ${FILL_QUESTIONS.length}`;
+  document.getElementById('fill-prog-fill').style.width = (state.fillIdx / FILL_QUESTIONS.length * 100) + '%';
+
+  const parts = q.sentence.split('___');
+  document.getElementById('fill-text').innerHTML = parts[0] + '<span class="blank">___</span>' + (parts[1] || '');
+
+  document.getElementById('fill-feedback').className = 'feedback';
+  document.getElementById('btn-next-fill').style.display = 'none';
+
+  // Shuffle choices
+  const shuffled = [...q.choices].sort(() => Math.random() - 0.5);
+  const keys = ['A', 'B', 'C', 'D'];
+  const optionsEl = document.getElementById('fill-options');
+  optionsEl.innerHTML = '';
+  shuffled.forEach((choice, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-key">${keys[i]}</span> ${choice}`;
+    btn.onclick = () => checkFillChoice(choice, btn, shuffled);
+    optionsEl.appendChild(btn);
+  });
+
+  const flagBtn = document.getElementById('fill-flag-btn');
+  flagBtn.classList.toggle('flagged', state.flags.has('fill-' + state.fillIdx));
+  flagBtn.textContent = state.flags.has('fill-' + state.fillIdx) ? '🚩' : '🏳';
+}
+
+function checkFillChoice(chosen, clickedBtn, allChoices) {
+  if (state.fillAnswered) return;
+  const q = state.fillQueue ? state.fillQueue[state.fillIdx] : FILL_QUESTIONS[state.fillIdx];
+  const correct = chosen.toLowerCase() === q.answer.toLowerCase();
+
+  state.fillAnswered = true;
+
+  // Disable all buttons and highlight
+  const allBtns = document.getElementById('fill-options').querySelectorAll('.option-btn');
+  allBtns.forEach(btn => {
+    btn.disabled = true;
+    const label = btn.textContent.trim().slice(2).trim(); // remove key prefix
+    if (label.toLowerCase() === q.answer.toLowerCase()) {
+      btn.classList.add('selected-correct');
+    }
+  });
+  if (!correct) {
+    clickedBtn.classList.remove('selected-correct');
+    clickedBtn.classList.add('selected-wrong');
+  }
+
+  const fb = document.getElementById('fill-feedback');
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  document.getElementById('fill-fb-verdict').textContent = correct ? `✅ Correct: "${q.answer}"` : `✗ Answer: "${q.answer}"`;
+  document.getElementById('fill-fb-why').textContent = q.why;
+
+  if (ttsActive) speak(q.sentence.replace('___', q.answer));
+
+  document.getElementById('btn-next-fill').style.display = 'inline-block';
+}
+
+function checkFill() {
+  // kept for compatibility — no longer used with choice UI
+}
+
+function showFillHint() {
+  const q = state.fillQueue ? state.fillQueue[state.fillIdx] : FILL_QUESTIONS[state.fillIdx];
+  document.getElementById('fill-mic-transcript').textContent = `Hint: ${q.hint}`;
+}
+
+function nextFill() {
+  const total = state.fillQueue ? state.fillQueue.length : FILL_QUESTIONS.length;
+  state.fillIdx = (state.fillIdx + 1) % total;
+  renderFill();
+}
+
+function toggleFillFlag() {
+  const key = 'fill-' + state.fillIdx;
+  if (state.flags.has(key)) state.flags.delete(key);
+  else state.flags.add(key);
+  const btn = document.getElementById('fill-flag-btn');
+  btn.classList.toggle('flagged', state.flags.has(key));
+  btn.textContent = state.flags.has(key) ? '🚩' : '🏳';
+  saveState();
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function getLevel() {
+  const total = state.score.correct + state.score.wrong;
+  const pct = total ? state.score.correct / total : 0;
+  if (total < 5) return 'Beginner';
+  if (pct >= 0.9) return 'Expert';
+  if (pct >= 0.75) return 'Advanced';
+  if (pct >= 0.55) return 'Intermediate';
+  return 'Developing';
+}
+
+function updateDashboard() {
+  const total = state.score.correct + state.score.wrong;
+  document.getElementById('dash-correct').textContent = state.score.correct;
+  document.getElementById('dash-total').textContent = `of ${total} answered`;
+  document.getElementById('dash-streak').textContent = state.bestStreak;
+  const level = getLevel();
+  document.getElementById('dash-level').textContent = level;
+  document.getElementById('dash-next').textContent = total < 5 ? 'Answer 5+ questions to advance' : `${state.score.correct}/${total} correct (${total ? Math.round(state.score.correct/total*100) : 0}%)`;
+
+  // skill bars
+  const skills = [
+    ['fsa', 'bar-fsa', 'pct-fsa'],
+    ['governance', 'bar-gov', 'pct-gov'],
+    ['evidence', 'bar-ev', 'pct-ev'],
+    ['pressure', 'bar-pr', 'pct-pr'],
+    ['crossborder', 'bar-cb', 'pct-cb'],
+  ];
+  skills.forEach(([key, barId, pctId]) => {
+    const [c, t] = state.skillScores[key] || [0, 0];
+    const pct = t > 0 ? Math.round(c / t * 100) : 0;
+    document.getElementById(barId).style.width = pct + '%';
+    document.getElementById(pctId).textContent = pct + '%';
+  });
+
+  // weak list
+  const weakList = document.getElementById('weak-list');
+  if (state.flags.size === 0) {
+    weakList.innerHTML = '<div class="weak-item" style="color:var(--ink3);cursor:default">No items flagged yet. Flag difficult questions during quiz.</div>';
+  } else {
+    weakList.innerHTML = '';
+    state.flags.forEach(id => {
+      if (typeof id === 'string' && id.startsWith('fill-')) {
+        const idx = parseInt(id.split('-')[1]);
+        const q = FILL_QUESTIONS[idx];
+        if (!q) return;
+        const item = document.createElement('div');
+        item.className = 'weak-item';
+        item.innerHTML = `<span class="weak-badge">Fill</span><span class="weak-text">${q.sentence}</span>`;
+        item.onclick = () => { state.fillIdx = idx; switchScreen('fill'); renderFill(); };
+        weakList.appendChild(item);
+      } else {
+        const q = QUESTIONS.find(q => q.id === id);
+        if (!q) return;
+        const item = document.createElement('div');
+        item.className = 'weak-item';
+        item.innerHTML = `<span class="weak-badge">${q.cat}</span><span class="weak-text">${q.q}</span><span class="weak-cat">Diff ${'●'.repeat(q.diff)}</span>`;
+        item.onclick = () => { state.quizQueue = [q]; state.quizIdx = 0; switchScreen('quiz'); renderQuestion(); };
+        weakList.appendChild(item);
+      }
+    });
+  }
+}
+
+function updateHeader() {
+  const total = state.score.correct + state.score.wrong;
+  const pct = total ? Math.round(state.score.correct / total * 100) : '—';
+  document.getElementById('hdr-score').textContent = total ? pct + '%' : '—';
+  document.getElementById('hdr-streak').textContent = state.streak;
+  document.getElementById('hdr-level').textContent = getLevel();
+}
+
+function resetProgress() {
+  if (!confirm('Reset all progress?')) return;
+  state = {
+    score: { correct: 0, wrong: 0 }, streak: 0, bestStreak: 0,
+    skillScores: { fsa:[0,0], evidence:[0,0], pressure:[0,0], governance:[0,0], crossborder:[0,0] },
+    flags: new Set(), history: [], quizQueue: [], quizIdx: 0, answered: false, rpIdx: 0, fillIdx: 0, fillAnswered: false,
+  };
+  saveState();
+  updateDashboard();
+  updateHeader();
+}
+
+// ═══════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════
+const CREDENTIALS = [
+  { id: 'fsa', pw: 'moomoo2025' },
+  { id: 'admin', pw: 'fsatrain' },
+  { id: 'user', pw: 'pass1234' },
+];
+
+function doLogin() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  const errorEl = document.getElementById('login-error');
+  const idEl = document.getElementById('login-id');
+  const pwEl = document.getElementById('login-pw');
+
+  const valid = CREDENTIALS.some(c => c.id === id && c.pw === pw);
+
+  if (valid) {
+    idEl.classList.remove('error');
+    pwEl.classList.remove('error');
+    errorEl.classList.remove('show');
+    const overlay = document.getElementById('login-overlay');
+    const app = document.getElementById('main-app');
+    overlay.classList.add('hidden');
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      app.style.display = 'flex';
+      updateDashboard();
+      updateHeader();
+      loadVoices();
+      setTimeout(loadVoices, 500);
+    }, 400);
+  } else {
+    idEl.classList.add('error');
+    pwEl.classList.add('error');
+    errorEl.classList.add('show');
+    pwEl.value = '';
+    pwEl.focus();
+  }
+}
+
+// Allow Enter key to submit
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-overlay') && !document.getElementById('login-overlay').classList.contains('hidden')) {
+    doLogin();
+  }
+});
+
+// Settings
+const rateEl = document.getElementById('set-rate');
+if (rateEl) {
+  rateEl.addEventListener('input', () => {
+    document.getElementById('set-rate-label').textContent = rateEl.value + '×';
+  });
+}
+
+// Fix scrollHeight bug in addMsg
+window.addEventListener('DOMContentLoaded', () => {
+  // App init is handled after login — see doLogin()
+  // Focus login input on load
+  const loginId = document.getElementById('login-id');
+  if (loginId) loginId.focus();
+});
+</script>
+</body>
+</html>
