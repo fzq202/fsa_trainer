@@ -2824,7 +2824,10 @@ function speakCurrentQuestion() {
   if (!ttsActive) return;
   const q = state.quizQueue[state.quizIdx];
   if (!q) return;
-  const text = (q.context ? q.context + '. ' : '') + q.q;
+  // MIXモード: fill問題は .sentence を使い、___ を "blank" に置換して読み上げ
+  const text = q._type === 'fill'
+    ? q.sentence.replace('___', '... blank')
+    : (q.context ? q.context + '. ' : '') + q.q;
   speak(text);
 }
 
