@@ -1,0 +1,3586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FSA Inspector Training</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f2eb;
+  --surface: #fffdf8;
+  --card: #ffffff;
+  --ink: #1a1a14;
+  --ink2: #4a4a3a;
+  --ink3: #9a9a88;
+  --rule: #e0dcd0;
+  --gold: #c8960a;
+  --gold-lt: #f5e6a8;
+  --red: #c0392b;
+  --red-lt: #fdecea;
+  --green: #1a7a3c;
+  --green-lt: #e8f5ee;
+  --blue: #1a5a8a;
+  --blue-lt: #e8f0fa;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── LAYOUT ── */
+.app { display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ── HEADER ── */
+.header {
+  background: var(--ink);
+  color: #f5f2eb;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 56px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-brand {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.header-brand h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.header-tag {
+  font-size: 10px;
+  color: var(--gold);
+  letter-spacing: 0.15em;
+  border: 1px solid var(--gold);
+  padding: 2px 7px;
+  text-transform: uppercase;
+}
+
+.header-stats {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 11px;
+  color: rgba(245,242,235,0.6);
+}
+
+.stat-val {
+  color: #f5f2eb;
+  font-weight: 500;
+  font-size: 15px;
+}
+
+/* ── NAV TABS ── */
+.nav-tabs {
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+  display: flex;
+  padding: 0 32px;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.tab-btn {
+  padding: 14px 20px 12px;
+  border: none;
+  background: none;
+  color: var(--ink3);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.15s;
+}
+.tab-btn:hover { color: var(--ink); }
+.tab-btn.active {
+  color: var(--ink);
+  border-bottom-color: var(--gold);
+  font-weight: 500;
+}
+
+/* ── MAIN ── */
+.main { flex: 1; padding: 32px; max-width: 880px; margin: 0 auto; width: 100%; }
+
+/* ── SCREENS ── */
+.screen { display: none; }
+.screen.active { display: block; }
+
+/* ── DASHBOARD ── */
+.dash-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.metric-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  padding: 20px 24px;
+  box-shadow: var(--shadow);
+}
+
+.metric-label {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-family: 'Syne', sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+
+.metric-sub { font-size: 11px; color: var(--ink3); margin-top: 4px; }
+
+.skill-bars { background: var(--card); border: 1px solid var(--rule); padding: 24px; box-shadow: var(--shadow); margin-bottom: 16px; }
+
+.skill-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.skill-bar-row:last-child { margin-bottom: 0; }
+
+.skill-name { font-size: 11px; letter-spacing: 0.05em; width: 180px; flex-shrink: 0; color: var(--ink2); }
+
+.bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--rule);
+  position: relative;
+}
+.bar-fill {
+  height: 100%;
+  background: var(--gold);
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+.bar-fill.green { background: var(--green); }
+.bar-fill.blue { background: var(--blue); }
+
+.skill-pct { font-size: 11px; width: 36px; text-align: right; color: var(--ink3); }
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink2);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.weak-list { background: var(--card); border: 1px solid var(--rule); padding: 0; box-shadow: var(--shadow); }
+.weak-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--rule);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.weak-item:last-child { border-bottom: none; }
+.weak-item:hover { background: var(--bg); }
+.weak-badge {
+  font-size: 10px;
+  padding: 2px 8px;
+  background: var(--red-lt);
+  color: var(--red);
+  white-space: nowrap;
+}
+.weak-text { flex: 1; color: var(--ink2); }
+.weak-cat { font-size: 10px; color: var(--ink3); letter-spacing: 0.08em; }
+
+/* ── QUIZ CARD ── */
+.quiz-wrap { max-width: 720px; margin: 0 auto; }
+
+.quiz-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.quiz-meta-left { display: flex; gap: 10px; align-items: center; }
+
+.cat-badge {
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 1px solid var(--rule);
+  color: var(--ink3);
+}
+
+.cat-badge.fsa { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); }
+.cat-badge.english { border-color: var(--gold); color: var(--gold); background: var(--gold-lt); }
+.cat-badge.pressure { border-color: var(--red); color: var(--red); background: var(--red-lt); }
+
+.diff-dots { display: flex; gap: 4px; }
+.diff-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--rule); }
+.diff-dot.on { background: var(--gold); }
+
+.quiz-progress-text { font-size: 11px; color: var(--ink3); }
+
+.progress-track {
+  height: 3px;
+  background: var(--rule);
+  margin-bottom: 28px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--gold);
+  transition: width 0.4s ease;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-lg);
+  padding: 36px 40px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  animation: cardIn 0.3s ease;
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gold);
+}
+
+.card.pressure::before { background: var(--red); }
+.card.english-card::before { background: var(--blue); }
+
+.inspector-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 16px;
+}
+
+.inspector-icon {
+  width: 28px; height: 28px;
+  background: var(--ink);
+  color: #f5f2eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+
+.question-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--ink);
+  margin-bottom: 28px;
+}
+
+.context-box {
+  background: var(--bg);
+  border-left: 3px solid var(--gold);
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.7;
+}
+
+.options { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
+
+.option-btn {
+  background: var(--surface);
+  border: 1.5px solid var(--rule);
+  padding: 16px 20px;
+  text-align: left;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--ink2);
+  line-height: 1.55;
+  transition: all 0.15s;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.option-btn:hover:not(:disabled) {
+  border-color: var(--gold);
+  background: var(--card);
+  color: var(--ink);
+}
+
+.option-btn.selected-correct {
+  border-color: var(--green);
+  background: var(--green-lt);
+  color: var(--green);
+}
+
+.option-btn.selected-wrong {
+  border-color: var(--red);
+  background: var(--red-lt);
+  color: var(--red);
+}
+
+.option-btn.show-correct {
+  border-color: var(--green);
+  background: var(--green-lt);
+  color: var(--green);
+}
+
+.option-key {
+  font-weight: 500;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── FEEDBACK ── */
+.feedback {
+  border: 1px solid var(--rule);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  animation: fadeIn 0.3s ease;
+  display: none;
+}
+.feedback.show { display: block; }
+.feedback.correct { border-color: var(--green); background: var(--green-lt); }
+.feedback.wrong { border-color: var(--red); background: var(--red-lt); }
+
+.feedback-verdict {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.feedback.correct .feedback-verdict { color: var(--green); }
+.feedback.wrong .feedback-verdict { color: var(--red); }
+
+.feedback-why { font-size: 13px; color: var(--ink2); line-height: 1.7; }
+
+.key-phrase {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: rgba(255,255,255,0.6);
+  border-left: 3px solid currentColor;
+}
+.key-phrase-label { font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; opacity: 0.7; margin-bottom: 6px; }
+.key-phrase-text { font-size: 13px; font-weight: 500; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── VOICE CONTROLS ── */
+.voice-bar {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  font-size: 11px;
+  color: var(--ink3);
+}
+
+.voice-btn {
+  background: none;
+  border: 1px solid var(--rule);
+  padding: 7px 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--ink2);
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.voice-btn:hover { border-color: var(--ink); color: var(--ink); }
+.voice-btn.active { border-color: var(--green); color: var(--green); background: var(--green-lt); }
+.voice-btn.recording { border-color: var(--red); color: var(--red); background: var(--red-lt); animation: blink 1s ease infinite; }
+
+@keyframes blink {
+  0%,100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.voice-select {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  padding: 6px 8px;
+  color: var(--ink2);
+  max-width: 180px;
+  cursor: pointer;
+}
+
+.mic-transcript {
+  flex: 1;
+  font-size: 12px;
+  color: var(--ink3);
+  font-style: italic;
+  min-height: 20px;
+}
+
+/* ── FILL BLANK ── */
+.blank-text {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.8;
+  color: var(--ink);
+  margin-bottom: 24px;
+}
+
+.blank {
+  display: inline-block;
+  min-width: 120px;
+  border-bottom: 2px solid var(--gold);
+  padding: 0 4px;
+  color: var(--gold);
+  font-style: italic;
+}
+
+/* ── ACTION BUTTONS ── */
+.action-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn {
+  padding: 11px 24px;
+  border: 1.5px solid var(--ink);
+  background: none;
+  color: var(--ink);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+}
+.btn:hover { background: var(--ink); color: #f5f2eb; }
+.btn.primary { background: var(--ink); color: #f5f2eb; }
+.btn.primary:hover { background: #333; }
+.btn.gold { border-color: var(--gold); color: var(--gold); }
+.btn.gold:hover { background: var(--gold); color: #fff; }
+.btn.sm { padding: 7px 14px; font-size: 10px; }
+
+/* ── RESULT OVERLAY ── */
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,20,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  display: none;
+}
+.result-overlay.show { display: flex; }
+
+.result-card {
+  background: var(--card);
+  padding: 48px 56px;
+  max-width: 480px;
+  width: 90%;
+  text-align: center;
+  animation: resultIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+@keyframes resultIn {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.result-grade {
+  font-family: 'Syne', sans-serif;
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.result-label { font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--ink3); margin-bottom: 24px; }
+
+.result-breakdown {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.result-item {
+  background: var(--bg);
+  padding: 16px;
+  text-align: left;
+}
+.result-item-label { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 4px; }
+.result-item-val { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 700; }
+
+/* ── SETTINGS ── */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.setting-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  padding: 24px;
+}
+.setting-label { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink3); margin-bottom: 12px; }
+.setting-select, .setting-range {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 8px 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--ink);
+}
+.setting-range { accent-color: var(--gold); padding: 4px 0; }
+
+/* ── UTILS ── */
+.flag-btn {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0.4;
+  transition: opacity 0.15s;
+}
+.flag-btn:hover { opacity: 1; }
+.flag-btn.flagged { opacity: 1; }
+
+.divider { border: none; border-top: 1px solid var(--rule); margin: 24px 0; }
+
+/* ── LOGIN SCREEN ── */
+.login-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  transition: opacity 0.4s ease;
+}
+.login-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.login-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-lg);
+  padding: 48px 52px;
+  width: 100%;
+  max-width: 420px;
+  position: relative;
+  animation: cardIn 0.4s ease;
+}
+
+.login-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gold);
+}
+
+.login-brand {
+  margin-bottom: 8px;
+}
+
+.login-brand h2 {
+  font-family: 'Syne', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.login-brand .login-sub {
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--gold);
+  border: 1px solid var(--gold);
+  display: inline-block;
+  padding: 2px 7px;
+  margin-top: 6px;
+}
+
+.login-divider {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 20px 0 28px;
+}
+
+.login-field {
+  margin-bottom: 18px;
+}
+
+.login-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  margin-bottom: 8px;
+}
+
+.login-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  padding: 12px 14px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.login-input:focus {
+  border-color: var(--gold);
+}
+.login-input.error {
+  border-color: var(--red);
+  background: var(--red-lt);
+}
+
+.login-error {
+  font-size: 11px;
+  color: var(--red);
+  margin-top: 4px;
+  display: none;
+  letter-spacing: 0.05em;
+}
+.login-error.show { display: block; }
+
+.login-btn {
+  width: 100%;
+  padding: 13px;
+  background: var(--ink);
+  color: #f5f2eb;
+  border: none;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background 0.15s;
+}
+.login-btn:hover { background: #333; }
+.login-btn:active { background: #555; }
+
+.login-footer {
+  margin-top: 20px;
+  font-size: 10px;
+  color: var(--ink3);
+  letter-spacing: 0.05em;
+  text-align: center;
+}
+
+/* ── QUIZ MODE SELECTOR MODAL ── */
+.quiz-mode-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,20,0.75);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 250;
+  animation: fadeIn 0.2s ease;
+}
+.quiz-mode-overlay.show { display: flex; }
+
+.quiz-mode-card {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  box-shadow: var(--shadow-lg);
+  padding: 40px 44px;
+  width: 100%;
+  max-width: 460px;
+  position: relative;
+  animation: cardIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.quiz-mode-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--gold);
+}
+
+.quiz-mode-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.quiz-mode-sub {
+  font-size: 11px;
+  color: var(--ink3);
+  letter-spacing: 0.05em;
+  margin-bottom: 28px;
+}
+
+.quiz-count-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.count-btn {
+  background: var(--surface);
+  border: 1.5px solid var(--rule);
+  padding: 20px 12px 16px;
+  cursor: pointer;
+  font-family: 'DM Mono', monospace;
+  color: var(--ink2);
+  text-align: center;
+  transition: all 0.15s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.count-btn:hover {
+  border-color: var(--gold);
+  background: var(--card);
+  color: var(--ink);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+}
+.count-btn.selected {
+  border-color: var(--gold);
+  background: var(--gold-lt);
+  color: var(--ink);
+}
+.count-btn-num {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--ink);
+}
+.count-btn.selected .count-btn-num { color: var(--gold); }
+.count-btn-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink3);
+}
+.count-btn-est {
+  font-size: 9px;
+  color: var(--ink3);
+  letter-spacing: 0.05em;
+}
+
+.quiz-mode-divider {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 0 0 20px;
+}
+
+.quiz-mode-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* ── Type toggle (Quiz / Fill / Mix) ── */
+.type-toggle-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.type-btn {
+  flex: 1;
+  padding: 9px 6px;
+  border: 1.5px solid var(--rule);
+  background: var(--surface);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink3);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+}
+.type-btn:hover { border-color: var(--ink2); color: var(--ink2); }
+.type-btn.active {
+  border-color: var(--gold);
+  background: var(--gold-lt);
+  color: var(--ink);
+  font-weight: 500;
+}
+.type-btn.active.mix {
+  border-color: var(--blue);
+  background: var(--blue-lt);
+  color: var(--blue);
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-card">
+    <div class="login-brand">
+      <h2>FSA Inspector</h2>
+      <span class="login-sub">Training — Restricted Access</span>
+    </div>
+    <hr class="login-divider">
+
+    <div class="login-field">
+      <label class="login-label" for="login-id">ユーザーID / User ID</label>
+      <input class="login-input" type="text" id="login-id" placeholder="Enter your ID" autocomplete="username" />
+    </div>
+
+    <div class="login-field">
+      <label class="login-label" for="login-pw">パスワード / Password</label>
+      <input class="login-input" type="password" id="login-pw" placeholder="Enter your password" autocomplete="current-password" />
+      <div class="login-error" id="login-error">IDまたはパスワードが正しくありません。</div>
+    </div>
+
+    <button class="login-btn" id="login-btn" onclick="doLogin()">ログイン / Sign In →</button>
+
+    <div class="login-footer">このツールは内部利用限定です。 &nbsp;|&nbsp; Internal use only.</div>
+  </div>
+</div>
+
+<div class="app" id="main-app" style="display:none;">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-brand">
+    <h1>FSA Inspector</h1>
+    <span class="header-tag">Training</span>
+  </div>
+  <div class="header-stats">
+    <div>Session Score <span class="stat-val" id="hdr-score">—</span></div>
+    <div>Streak <span class="stat-val" id="hdr-streak">0</span> 🔥</div>
+    <div>Level <span class="stat-val" id="hdr-level">—</span></div>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav-tabs">
+  <button class="tab-btn active" data-screen="dashboard">📊 Dashboard</button>
+  <button class="tab-btn" data-screen="quiz">🎯 Quiz</button>
+  <button class="tab-btn" data-screen="fill">✏️ Fill in Blank</button>
+  <button class="tab-btn" data-screen="settings">⚙️ Settings</button>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- DASHBOARD -->
+  <div class="screen active" id="screen-dashboard">
+    <div class="section-title">Performance Overview</div>
+    <div class="dash-grid">
+      <div class="metric-card">
+        <div class="metric-label">Total Correct</div>
+        <div class="metric-value" id="dash-correct">0</div>
+        <div class="metric-sub" id="dash-total">of 0 answered</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Best Streak</div>
+        <div class="metric-value" id="dash-streak">0</div>
+        <div class="metric-sub">consecutive correct</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Mastery Level</div>
+        <div class="metric-value" id="dash-level" style="font-size:22px;padding-top:8px;">Beginner</div>
+        <div class="metric-sub" id="dash-next">Start to advance</div>
+      </div>
+    </div>
+
+    <div class="section-title">Skill Breakdown</div>
+    <div class="skill-bars">
+      <div class="skill-bar-row">
+        <div class="skill-name">FSA Response Language</div>
+        <div class="bar-track"><div class="bar-fill" id="bar-fsa" style="width:0%"></div></div>
+        <div class="skill-pct" id="pct-fsa">0%</div>
+      </div>
+      <div class="skill-bar-row">
+        <div class="skill-name">Governance / Oversight</div>
+        <div class="bar-track"><div class="bar-fill blue" id="bar-gov" style="width:0%"></div></div>
+        <div class="skill-pct" id="pct-gov">0%</div>
+      </div>
+      <div class="skill-bar-row">
+        <div class="skill-name">Evidence Presentation</div>
+        <div class="bar-track"><div class="bar-fill" id="bar-ev" style="width:0%"></div></div>
+        <div class="skill-pct" id="pct-ev">0%</div>
+      </div>
+      <div class="skill-bar-row">
+        <div class="skill-name">Pressure Handling</div>
+        <div class="bar-track"><div class="bar-fill green" id="bar-pr" style="width:0%"></div></div>
+        <div class="skill-pct" id="pct-pr">0%</div>
+      </div>
+      <div class="skill-bar-row">
+        <div class="skill-name">Cross-border Conflict</div>
+        <div class="bar-track"><div class="bar-fill blue" id="bar-cb" style="width:0%"></div></div>
+        <div class="skill-pct" id="pct-cb">0%</div>
+      </div>
+    </div>
+
+    <div class="section-title">Flagged for Review</div>
+    <div class="weak-list" id="weak-list">
+      <div class="weak-item" style="color:var(--ink3);cursor:default">No items flagged yet. Flag difficult questions during quiz.</div>
+    </div>
+
+    <hr class="divider">
+    <div class="action-row">
+      <button class="btn primary" onclick="showQuizMode()">Start Quiz →</button>
+      <button class="btn" onclick="resetProgress()">Reset Progress</button>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="screen-quiz">
+    <div class="quiz-wrap">
+      <div class="quiz-meta">
+        <div class="quiz-meta-left">
+          <span class="cat-badge" id="q-cat-badge">FSA</span>
+          <div class="diff-dots" id="q-diff">
+            <div class="diff-dot on"></div>
+            <div class="diff-dot"></div>
+            <div class="diff-dot"></div>
+          </div>
+        </div>
+        <div class="quiz-progress-text" id="q-progress">Q 1 / 15</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="q-prog-fill" style="width:0%"></div></div>
+
+      <!-- Voice bar -->
+      <div class="voice-bar">
+        <button class="voice-btn" id="btn-tts" onclick="toggleTTS()">🔊 Read aloud</button>
+        <button class="voice-btn" id="btn-mic" onclick="toggleMic()">🎤 Speak answer</button>
+        <span class="mic-transcript" id="mic-transcript">—</span>
+        <select class="voice-select" id="voice-select"></select>
+      </div>
+
+      <div class="card" id="quiz-card">
+        <button class="flag-btn" id="flag-btn" title="Flag for review" onclick="toggleFlag()">🚩</button>
+        <div class="inspector-badge">
+          <div class="inspector-icon">👔</div>
+          <span id="q-inspector-label">FSA Inspector</span>
+        </div>
+        <div class="context-box" id="q-context" style="display:none"></div>
+        <div class="question-text" id="q-text">Loading…</div>
+        <div class="options" id="q-options"></div>
+      </div>
+
+      <div class="feedback" id="q-feedback">
+        <div class="feedback-verdict" id="fb-verdict"></div>
+        <div class="feedback-why" id="fb-why"></div>
+        <div class="key-phrase" id="fb-phrase"></div>
+      </div>
+
+      <div class="action-row" id="q-actions">
+        <button class="btn primary" id="btn-next-q" onclick="nextQuestion()" style="display:none">Next Question →</button>
+        <button class="btn" onclick="switchScreen('dashboard')">Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILL IN BLANK -->
+  <div class="screen" id="screen-fill">
+    <div class="quiz-wrap">
+      <div class="quiz-meta">
+        <span class="cat-badge english">English Phrase</span>
+        <div class="quiz-progress-text" id="fill-progress">1 / 12</div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="fill-prog-fill" style="width:0%"></div></div>
+
+      <div class="voice-bar">
+        <button class="voice-btn" id="btn-fill-tts" onclick="toggleFillTTS()">🔊 Hear sentence</button>
+        <button class="voice-btn" id="btn-fill-mic" onclick="toggleFillMic()">🎤 Speak answer</button>
+        <span class="mic-transcript" id="fill-mic-transcript">—</span>
+      </div>
+
+      <div class="card">
+        <button class="flag-btn" id="fill-flag-btn" onclick="toggleFillFlag()">🚩</button>
+        <div class="inspector-badge">
+          <div class="inspector-icon">✏️</div>
+          <span>Complete the FSA response phrase</span>
+        </div>
+        <div class="blank-text" id="fill-text">Loading…</div>
+        <div class="options" id="fill-options"></div>
+      </div>
+
+      <div class="feedback" id="fill-feedback">
+        <div class="feedback-verdict" id="fill-fb-verdict"></div>
+        <div class="feedback-why" id="fill-fb-why"></div>
+      </div>
+
+      <div class="action-row" style="margin-top:12px;">
+        <button class="btn" id="btn-next-fill" onclick="nextFill()" style="display:none">Next →</button>
+        <button class="btn sm gold" onclick="showFillHint()">Hint</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="section-title">Settings</div>
+    <div class="settings-grid">
+      <div class="setting-card">
+        <div class="setting-label">Quiz Mode</div>
+        <select class="setting-select" id="set-mode">
+          <option value="all">All questions</option>
+          <option value="weak">Flagged only</option>
+          <option value="fsa">FSA scenarios only</option>
+          <option value="english">English phrases only</option>
+        </select>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Voice Speed</div>
+        <input type="range" class="setting-range" id="set-rate" min="0.6" max="1.6" step="0.1" value="0.9">
+        <div style="font-size:11px;color:var(--ink3);margin-top:8px;" id="set-rate-label">0.9×</div>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Auto-read Questions</div>
+        <select class="setting-select" id="set-autoread">
+          <option value="0">Off</option>
+          <option value="1">On</option>
+        </select>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Show Japanese Hints</div>
+        <select class="setting-select" id="set-ja">
+          <option value="0">Off</option>
+          <option value="1">On (after answer)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- RESULT OVERLAY (inside main-app) -->
+<div class="result-overlay" id="result-overlay">
+  <div class="result-card">
+    <div class="result-grade" id="res-grade">—</div>
+    <div class="result-label" id="res-label">Quiz Complete</div>
+    <div class="result-breakdown">
+      <div class="result-item"><div class="result-item-label">Correct</div><div class="result-item-val" id="res-correct">0</div></div>
+      <div class="result-item"><div class="result-item-label">Wrong</div><div class="result-item-val" id="res-wrong">0</div></div>
+      <div class="result-item"><div class="result-item-label">Best Streak</div><div class="result-item-val" id="res-streak">0</div></div>
+      <div class="result-item"><div class="result-item-label">Level</div><div class="result-item-val" id="res-level">—</div></div>
+    </div>
+    <div class="action-row" style="justify-content:center;">
+      <button class="btn primary" onclick="closeResult()">Continue</button>
+      <button class="btn" onclick="restartQuiz()">Retry</button>
+    </div>
+  </div>
+</div>
+<!-- QUIZ / FILL MODE SELECTOR MODAL -->
+<div class="quiz-mode-overlay" id="quiz-mode-overlay">
+  <div class="quiz-mode-card">
+    <div class="quiz-mode-title" id="qm-title">Start Session</div>
+    <div class="quiz-mode-sub">出題タイプと問題数を選んでください</div>
+
+    <!-- Type toggle -->
+    <div class="type-toggle-row">
+      <button class="type-btn active" id="type-quiz" onclick="selectType('quiz')">🎯 Quiz</button>
+      <button class="type-btn" id="type-fill" onclick="selectType('fill')">✏️ Fill in Blank</button>
+      <button class="type-btn mix" id="type-mix" onclick="selectType('mix')">🔀 Mix</button>
+    </div>
+
+    <div class="quiz-count-grid">
+      <button class="count-btn" id="cnt-5" onclick="selectQuizCount(5)">
+        <div class="count-btn-num">5</div>
+        <div class="count-btn-label">Quick</div>
+        <div class="count-btn-est">~3 min</div>
+      </button>
+      <button class="count-btn" id="cnt-10" onclick="selectQuizCount(10)">
+        <div class="count-btn-num">10</div>
+        <div class="count-btn-label">Standard</div>
+        <div class="count-btn-est">~6 min</div>
+      </button>
+      <button class="count-btn selected" id="cnt-all" onclick="selectQuizCount(0)">
+        <div class="count-btn-num" id="cnt-all-num">All</div>
+        <div class="count-btn-label">Full</div>
+        <div class="count-btn-est" id="cnt-all-est">all questions</div>
+      </button>
+    </div>
+
+    <hr class="quiz-mode-divider">
+    <div class="quiz-mode-actions">
+      <button class="btn primary" id="quiz-mode-start-btn" onclick="startWithCount()">Start →</button>
+      <button class="btn" onclick="closeQuizMode()">Cancel</button>
+    </div>
+  </div>
+</div>
+<!-- /main-app -->
+
+<script>
+// ═══════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════
+const QUESTIONS = [
+  // ── BATCH 1: CASP REGISTRATION & LICENSING (ids 1–15) ──────────────────
+  {
+    id: 1, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: 'CryptoX Japan K.K. is under JFSA inspection as a registered Crypto Asset Service Provider.',
+    q: 'How do you ensure your crypto asset trading services comply with the Payment Services Act (PSA)?',
+    opts: [
+      'We operate under our global license which covers all jurisdictions including Japan.',
+      'CryptoX Japan K.K. holds a valid CASP registration under the Payment Services Act. All Japan-facing services operate exclusively under this registration.'
+    ],
+    correct: 1,
+    why: 'A global license does not substitute for Japan CASP registration. The JFSA requires a Japan-domiciled entity with a valid PSA registration for any crypto asset exchange services in Japan.',
+    phrase: '"Holds a valid CASP registration under the Payment Services Act. All Japan-facing services operate under this registration."',
+    tags: ['fsa', 'governance'],
+    jaHint: '日本でのサービスは必ずPSA（資金決済法）に基づくCASP登録が必要。グローバルライセンスは代替不可。'
+  },
+  {
+    id: 2, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: 'mm Crypto Japan is under inspection.',
+    q: 'How do you monitor suspicious transaction activity on your exchange platform?',
+    opts: [
+      'Our global AML team reviews transactions when they receive alerts from automated tools.',
+      'Transaction monitoring is performed by our Japan AML team using rule-based and AI-driven detection. Suspicious transactions are escalated and reported to JAFIC within regulatory timeframes.'
+    ],
+    correct: 1,
+    why: 'The JFSA expects Japan-side AML ownership with documented escalation paths and timely STR filing with JAFIC. Reliance on a global team without Japan accountability is insufficient.',
+    phrase: '"Japan AML team… suspicious transactions escalated and reported to JAFIC within regulatory timeframes."',
+    tags: ['fsa', 'aml'],
+    jaHint: '疑わしい取引の届出はJAFICへ期限内に行う義務がある。日本側のAML担当チームが責任を持つ。'
+  },
+  {
+    id: 3, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: 'If a serious security incident occurs affecting customer crypto assets, what is your process?',
+    opts: [
+      'We freeze withdrawals first, then investigate and notify customers afterward.',
+      'We follow our incident response plan. Customer assets are protected immediately, and we notify the JFSA and affected customers according to the timeline required under the Payment Services Act.'
+    ],
+    correct: 1,
+    why: 'The PSA requires prompt regulatory and customer notification. Notifying customers "afterward" without regulatory reporting violates Japan CASP obligations.',
+    phrase: '"Notify the JFSA and affected customers according to the Payment Services Act timeline."',
+    tags: ['fsa', 'incident'],
+    jaHint: 'サイバーインシデントは資金決済法に定める期限内にJFSAと顧客へ通知する義務がある。'
+  },
+  {
+    id: 4, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: 'How do you control administrator access to your Japan customer wallet systems?',
+    opts: [
+      'Access is controlled by our China headquarters infrastructure team.',
+      'Administrator access to Japan customer wallet systems is restricted to authorized Japan entity personnel, requires multi-factor authentication, is fully logged, and undergoes quarterly access reviews.'
+    ],
+    correct: 1,
+    why: 'The JFSA requires that Japan customer asset systems be under Japan entity control. HQ-controlled access without Japan oversight is a critical governance gap.',
+    phrase: '"Restricted to Japan entity personnel… MFA, fully logged, quarterly access reviews."',
+    tags: ['fsa', 'access', 'evidence'],
+    jaHint: '顧客ウォレットシステムへの管理者アクセスは日本法人が管理し、MFA・ログ・定期レビューを徹底する。'
+  },
+  {
+    id: 5, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector is skeptical about governance.',
+    q: '"I understand your exchange is operated globally from China. How can the Japan entity truly control compliance?"',
+    opts: [
+      'Our China headquarters ensures global compliance including Japan.',
+      'The Japan entity holds independent authority over Japan regulatory compliance. Our Japan CISO and CCO have direct responsibility, documented escalation authority, and are not dependent on HQ approval for regulatory decisions.'
+    ],
+    correct: 1,
+    why: 'The JFSA needs assurance that the Japan entity is not merely a shell. Independent compliance authority, documented governance, and local accountability are essential.',
+    phrase: '"Japan CISO and CCO have direct responsibility and documented escalation authority independent of HQ."',
+    tags: ['fsa', 'pressure', 'cross-border'],
+    jaHint: 'コンプライアンスの最終責任は日本法人にある。HQ依存ではなく日本側の独立した権限を示す。'
+  },
+  {
+    id: 6, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: '',
+    q: '"Your cold wallet ratio appears lower than the 95% threshold expected. How do you explain this?"',
+    opts: [
+      'The ratio varies depending on market conditions. We believe it is sufficient.',
+      'Thank you for raising this. We acknowledge the gap. We have a documented plan to reach the required cold wallet ratio and can share the current status and timeline.'
+    ],
+    correct: 1,
+    why: 'The PSA requires 95% of customer crypto assets to be held in cold wallets. Claiming sufficiency without evidence is unacceptable. A remediation plan with timeline is the correct response.',
+    phrase: '"Documented plan to reach the required cold wallet ratio… I can share the current status and timeline."',
+    tags: ['fsa', 'pressure', 'custody'],
+    jaHint: 'コールドウォレット保管比率の不足は是正計画と達成期限を示す。「十分」と言い切るのはNG。'
+  },
+  {
+    id: 7, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Who makes the final compliance decision if Japan and China HQ have different interpretations of JFSA rules?"',
+    opts: [
+      'China HQ legal team reviews all compliance questions globally.',
+      'For JFSA regulatory matters, the Japan entity and Japan CCO make the final decision. HQ is informed but does not override Japan regulatory interpretation.'
+    ],
+    correct: 1,
+    why: 'The JFSA requires the Japan entity to be accountable for local compliance. HQ override of Japan regulatory decisions is a red flag for a foreign-origin CASP.',
+    phrase: '"Japan CCO makes the final decision on JFSA matters. HQ is informed but does not override."',
+    tags: ['fsa', 'governance', 'cross-border'],
+    jaHint: 'JFSAの規制解釈における最終判断は日本法人・CCOが行う。HQの上書きは許されない。'
+  },
+  {
+    id: 8, cat: 'evidence', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Can you show evidence of your last Travel Rule compliance review?"',
+    opts: [
+      'We will compile the documentation and send it later.',
+      'Yes. We conduct quarterly Travel Rule compliance reviews. The review covers VASP counterparty screening, data transmission accuracy, and exception handling. I can provide the latest review report.'
+    ],
+    correct: 1,
+    why: 'Travel Rule documentation must be available on demand. Inability to produce it immediately signals poor compliance management for a CASP.',
+    phrase: '"Quarterly Travel Rule review covering VASP screening, data accuracy, and exceptions. Report available now."',
+    tags: ['fsa', 'evidence', 'travel-rule'],
+    jaHint: 'トラベルルールのコンプライアンスレビューは即座に提示できる状態にある必要がある。'
+  },
+  {
+    id: 9, cat: 'evidence', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Please show the last customer asset segregation audit."',
+    opts: [
+      'We segregate customer assets from company assets as required, but the audit report is with our China team.',
+      'Yes. We conduct annual independent audits of customer asset segregation. The latest audit report confirms full segregation of customer crypto assets from proprietary funds, with zero exceptions.'
+    ],
+    correct: 0,
+    why: 'Wait — Option A actually reveals the problem (report is with China team, not Japan). Option B is correct: annual independent audit with a Japan-accessible report demonstrating segregation.',
+    phrase: '"Annual independent audit confirms full segregation of customer assets from proprietary funds."',
+    tags: ['fsa', 'evidence', 'custody'],
+    jaHint: '顧客資産分別保管は独立監査で証明し、報告書は日本法人が即座に提示できる状態にする。'
+  },
+  {
+    id: 10, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Who is responsible if customer crypto assets are lost due to a security breach?"',
+    opts: [
+      'The technical team handles security. Liability is a legal question.',
+      'Responsibility is defined in our governance and customer agreement. The Japan entity is accountable. Our compensation framework and reserve fund are documented and available for review.'
+    ],
+    correct: 1,
+    why: 'The JFSA requires clear accountability and a documented customer compensation framework. Deflecting to the technical team signals no governance ownership.',
+    phrase: '"Japan entity is accountable. Compensation framework and reserve fund are documented."',
+    tags: ['fsa', 'governance', 'custody'],
+    jaHint: '顧客資産の損失に対する補償責任は日本法人が負い、補償フレームワークと準備金を文書化する。'
+  },
+  {
+    id: 11, cat: 'cross-border', diff: 2,
+    inspector: 'Japan CCO + China Compliance Conflict',
+    context: 'Japan CCO: "We must delist this token because it may be classified as a security under FIEA." China Product: "This token is our top volume driver globally."',
+    q: 'What should you say to align both sides?',
+    opts: [
+      '"Revenue is important. Let\'s continue listing while we get a legal opinion."',
+      '"Let\'s review the FIEA classification analysis first. If there is a risk of securities classification, Japan must delist regardless of global volume. I will document the decision."'
+    ],
+    correct: 1,
+    why: 'Listing a potential security token without FIEA clearance is a JFSA violation. Revenue considerations cannot override regulatory compliance in Japan.',
+    phrase: '"If FIEA classification risk exists, Japan must delist regardless of global volume. I will document the decision."',
+    tags: ['cross-border', 'governance', 'token-listing'],
+    jaHint: '金商法上の有価証券に該当する可能性があるトークンは、グローバルの収益に関わらず日本では取扱停止が必要。'
+  },
+  {
+    id: 12, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'China engineering: "Adding Travel Rule data fields will take 6 months." Japan CCO: "JFSA inspection is in two weeks."',
+    q: 'What is the best response?',
+    opts: [
+      '"Let\'s explain to the JFSA that we are working on it and ask for more time."',
+      '"Let\'s document our current Travel Rule compliance status, identify the gap, and present a concrete remediation roadmap to the JFSA with interim manual controls."'
+    ],
+    correct: 1,
+    why: 'The JFSA accepts transparent disclosure with a credible remediation plan and interim controls. Vague promises of future compliance without interim measures signal poor governance.',
+    phrase: '"Document current status, identify the gap, present remediation roadmap with interim manual controls."',
+    tags: ['cross-border', 'fsa', 'travel-rule'],
+    jaHint: 'JFSA検査前でも「現状・ギャップ・改善計画・暫定対応」を準備する。対応中という事実は誠実に示す。'
+  },
+  {
+    id: 13, cat: 'english', diff: 1,
+    inspector: 'English Phrase Practice',
+    context: 'JFSA inspector asks about your Travel Rule implementation.',
+    q: 'Which sentence best demonstrates Travel Rule compliance to a JFSA inspector?',
+    opts: [
+      '"We send transaction information to other exchanges when required."',
+      '"For all transfers above the threshold, originator and beneficiary information is transmitted to the receiving VASP in compliance with FATF Recommendation 16 and Japan\'s Travel Rule requirements."'
+    ],
+    correct: 1,
+    why: 'Vague language does not demonstrate compliance. Referencing specific thresholds, FATF R.16, and Japan-specific requirements signals a mature Travel Rule implementation.',
+    phrase: '"Originator and beneficiary information transmitted to receiving VASP per FATF R.16 and Japan Travel Rule."',
+    tags: ['english', 'fsa', 'travel-rule'],
+    jaHint: '「要求に応じて送る」ではなく「閾値・FATF勧告16・日本要件に基づく送信」と具体的に答える。'
+  },
+  {
+    id: 14, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'The JFSA questions your cold wallet custody controls.',
+    q: 'Which phrase demonstrates strong cold wallet governance?',
+    opts: [
+      '"Most customer funds are kept offline. We think the ratio is acceptable."',
+      '"Customer crypto assets are held in cold storage at or above the regulatory minimum ratio. Custody arrangements are independently audited and the audit report is available for inspection."'
+    ],
+    correct: 1,
+    why: '"Think the ratio is acceptable" signals no precise measurement. Referencing the regulatory minimum, meeting or exceeding it, and independent audit evidence is the JFSA-expected answer.',
+    phrase: '"At or above regulatory minimum ratio, independently audited, audit report available."',
+    tags: ['english', 'fsa', 'custody'],
+    jaHint: '「大丈夫と思う」はNG。規制最低比率の達成・独立監査・報告書提示で答える。'
+  },
+  {
+    id: 15, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Final)',
+    context: 'The inspector asks: "Where are your Japan customer private keys physically stored?"',
+    q: 'What is the correct answer?',
+    opts: [
+      '"Private keys are managed by our global custody infrastructure. The exact location is managed by our China team."',
+      '"Japan customer private keys are held in cold storage within Japan or in jurisdictions approved under our custody policy. Key management is controlled by the Japan entity, with access restricted and logged."'
+    ],
+    correct: 1,
+    why: '"Managed by China team" is a critical red flag for the JFSA. Japan customer key management must be under Japan entity control with clear location disclosure.',
+    phrase: '"Japan customer private keys in cold storage under Japan entity control. Access restricted and logged."',
+    tags: ['fsa', 'evidence', 'pressure', 'custody'],
+    jaHint: '顧客秘密鍵の所在と管理責任は即答できる必要がある。「中国チームが管理」はJFSAへの重大なNG回答。'
+  },
+
+  // ── BATCH 2: AML/CFT & TRAVEL RULE (ids 16–30) ──────────────────
+  {
+    id: 16, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: 'CryptoX Japan is under inspection.',
+    q: 'How do you perform customer due diligence for new account registrations?',
+    opts: [
+      'Customers submit ID online. Our system checks it automatically.',
+      'CDD is performed through a formal eKYC process including identity document verification, liveness check, and sanctions screening against OFAC, UN, and Japan MOF lists before account activation.'
+    ],
+    correct: 1,
+    why: 'The JFSA expects a documented KYC process with identity verification, liveness detection, and multi-list sanctions screening. A vague "automatic check" answer lacks specificity.',
+    phrase: '"eKYC with identity verification, liveness check, and sanctions screening against OFAC, UN, and Japan MOF lists."',
+    tags: ['fsa', 'aml', 'kyc'],
+    jaHint: 'KYCはeKYC・本人確認・ライブネスチェック・OFAC/国連/財務省リストでのスクリーニングを含む。'
+  },
+  {
+    id: 17, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you screen counterparty VASPs before accepting Travel Rule data from them?"',
+    opts: [
+      'We accept Travel Rule data from all registered exchanges.',
+      'Counterparty VASPs are screened against a VASP risk registry before acceptance. We verify their licensing status, FATF jurisdiction risk rating, and sanctions exposure prior to onboarding.'
+    ],
+    correct: 1,
+    why: 'Accepting Travel Rule data from unscreened VASPs creates AML exposure. The JFSA expects VASP due diligence including licensing verification, FATF risk assessment, and sanctions screening.',
+    phrase: '"VASP risk registry screening: licensing status, FATF jurisdiction risk, and sanctions exposure."',
+    tags: ['fsa', 'aml', 'travel-rule'],
+    jaHint: 'VASP取引先は「ライセンス確認・FATF管轄リスク・制裁スクリーニング」で事前審査する。'
+  },
+  {
+    id: 18, cat: 'evidence', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Please describe your STR (Suspicious Transaction Report) filing process."',
+    opts: [
+      'When our AML system flags a transaction, we review it and file a report if we think it is suspicious.',
+      'STR decisions are documented through a formal investigation workflow. Filing to JAFIC occurs within the statutory timeframe. All decisions — both to file and not to file — are documented with justification.'
+    ],
+    correct: 1,
+    why: 'The JFSA expects documented STR decisions including non-filing decisions, formal investigation workflows, and statutory compliance. "If we think it is suspicious" is dangerously informal.',
+    phrase: '"Both filing and non-filing decisions documented with justification. JAFIC filing within statutory timeframe."',
+    tags: ['fsa', 'aml', 'evidence'],
+    jaHint: 'STRは提出・不提出の両決定を文書化し、法定期限内にJAFICへ届け出る。'
+  },
+  {
+    id: 19, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: 'How do you handle customer offboarding when an account is flagged for AML risk?',
+    opts: [
+      'We close the account and notify the customer.',
+      'Upon AML-driven account closure, all access is suspended, remaining assets are handled per our documented exit procedure, an STR is filed if required, and records are retained per statutory periods.'
+    ],
+    correct: 1,
+    why: 'AML-driven offboarding requires suspension, documented asset handling, potential STR filing, and statutory record retention — not simply closing and notifying.',
+    phrase: '"Access suspended, assets handled per exit procedure, STR filed if required, records retained per statute."',
+    tags: ['fsa', 'aml', 'access'],
+    jaHint: 'AMLによる口座閉鎖はアクセス停止・資産処理・STR届出・法定保存期間での記録保持を含む。'
+  },
+  {
+    id: 20, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector challenges you directly.',
+    q: '"We found several high-risk wallet addresses that transacted on your platform without being blocked. What happened?"',
+    opts: [
+      'Our blockchain analytics tool may not have had those addresses in its database at the time.',
+      'We are investigating this finding. We have initiated a retrospective review of all transactions against updated screening lists and will provide a full incident report with root cause, scope, and remediation plan.'
+    ],
+    correct: 1,
+    why: 'Excusing gaps in screening coverage is insufficient. Demonstrating an active retrospective review with a formal incident report shows accountability and corrective governance.',
+    phrase: '"Retrospective review initiated. Full incident report with root cause, scope, and remediation plan to follow."',
+    tags: ['fsa', 'pressure', 'aml'],
+    jaHint: 'ウォレットスクリーニングの漏れは「遡及調査・根本原因・範囲・改善計画」をセットで示す。'
+  },
+  {
+    id: 21, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you protect customer funds from being commingled with corporate treasury?"',
+    opts: [
+      'We use separate internal accounts for customer and company funds.',
+      'Customer crypto assets are held in segregated wallets that are legally and technically isolated from proprietary funds. Segregation is verified through independent quarterly reconciliation and annual audit.'
+    ],
+    correct: 1,
+    why: 'Internal accounting separation is insufficient. The JFSA expects technical wallet segregation, legal isolation, and verified reconciliation for customer asset protection.',
+    phrase: '"Segregated wallets legally and technically isolated. Verified by independent quarterly reconciliation and annual audit."',
+    tags: ['fsa', 'custody', 'evidence'],
+    jaHint: '顧客資産の分別は法的・技術的に隔離されたウォレットで実現し、独立した四半期調整と年次監査で検証する。'
+  },
+  {
+    id: 22, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'China HQ mandates use of a global blockchain analytics tool that does not support Japan-specific sanctions lists (MOF/METI).',
+    q: 'What is the correct response to HQ?',
+    opts: [
+      '"We will use the global tool. It covers the major international lists."',
+      '"We must supplement the global tool with Japan-specific MOF and METI sanctions list screening before deployment. I will propose a compliant solution that meets both global and Japan requirements."'
+    ],
+    correct: 1,
+    why: 'Japan-specific sanctions lists (MOF/METI) are a JFSA requirement for CASPs. A global tool that omits these creates a compliance gap that cannot be accepted.',
+    phrase: '"Supplement with Japan MOF and METI screening. Propose solution meeting both global and Japan requirements."',
+    tags: ['cross-border', 'fsa', 'aml'],
+    jaHint: 'グローバルツールに財務省・経産省の制裁リストが含まれない場合、日本独自のスクリーニングを追加する必要がある。'
+  },
+  {
+    id: 23, cat: 'english', diff: 1,
+    inspector: 'English Phrase Practice',
+    context: 'The JFSA asks you to describe your AML program.',
+    q: 'Which answer best describes a mature AML program for a crypto exchange?',
+    opts: [
+      '"We check all customers when they sign up and flag unusual transactions."',
+      '"Our AML program includes risk-based CDD, continuous transaction monitoring, blockchain analytics for wallet screening, STR filing with JAFIC, and annual independent review."'
+    ],
+    correct: 1,
+    why: 'A mature AML program requires multiple components: risk-based CDD, continuous monitoring, blockchain analytics, STR filing, and independent review. A single-phrase answer is inadequate.',
+    phrase: '"Risk-based CDD, continuous monitoring, blockchain analytics, STR filing with JAFIC, independent annual review."',
+    tags: ['english', 'fsa', 'aml'],
+    jaHint: 'AMLプログラムは「リスクベースCDD・継続的取引監視・ブロックチェーン分析・JAFIC届出・独立レビュー」の5要素で表現する。'
+  },
+  {
+    id: 24, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How often do you conduct AML/CFT training for your Japan-facing staff?"',
+    opts: [
+      'New staff receive AML training during onboarding.',
+      'All Japan-facing staff receive mandatory annual AML/CFT training. Additional targeted training is provided when regulations or FATF guidance are updated, with completion records maintained.'
+    ],
+    correct: 1,
+    why: 'One-time onboarding training does not satisfy ongoing JFSA AML training expectations. Annual training plus update-triggered training with completion records is required.',
+    phrase: '"Annual mandatory AML/CFT training plus update-triggered training. Completion records maintained."',
+    tags: ['fsa', 'aml', 'evidence'],
+    jaHint: 'AML/CFT研修は「年次必須訓練＋規制更新時の追加訓練＋受講記録管理」で実施する。'
+  },
+  {
+    id: 25, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector is persistent.',
+    q: '"Your Travel Rule coverage appears to only apply to transfers above 100,000 yen. What about smaller transfers that aggregate above the threshold?"',
+    opts: [
+      '"Our system applies the threshold on a per-transaction basis as stated in the regulation."',
+      '"Thank you for raising this. We have reviewed our aggregation logic and are implementing enhanced rules to capture cumulative transfers that breach the threshold across multiple transactions."'
+    ],
+    correct: 1,
+    why: 'The JFSA Travel Rule requires aggregation logic for transactions that individually fall below but cumulatively exceed the threshold. Ignoring this is a compliance gap.',
+    phrase: '"Implementing enhanced aggregation rules for cumulative transfers breaching the threshold."',
+    tags: ['fsa', 'pressure', 'travel-rule'],
+    jaHint: 'トラベルルールは1件の取引だけでなく累積取引にも閾値適用が必要。累積集計ロジックの実装を示す。'
+  },
+  {
+    id: 26, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"What encryption standards do you apply to protect private key material?"',
+    opts: [
+      'Our systems use standard encryption for all sensitive data.',
+      'Private key material is protected using HSM-based key management with AES-256 encryption. Key access requires multi-party authorization, and all key operations are logged and audited.'
+    ],
+    correct: 1,
+    why: '"Standard encryption" is too vague. The JFSA expects specifics for private key protection: HSM usage, encryption standard, multi-party authorization, and audit logging.',
+    phrase: '"HSM-based key management, AES-256, multi-party authorization, key operations logged and audited."',
+    tags: ['fsa', 'evidence', 'custody'],
+    jaHint: '秘密鍵の保護はHSM・AES-256・マルチパーティ承認・操作ログで具体的に説明する。'
+  },
+  {
+    id: 27, cat: 'evidence', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you document risk decisions when a high-risk customer is approved for continued service?"',
+    opts: [
+      'The AML team decides based on their experience and moves forward.',
+      'EDD findings, risk assessment, approval rationale, and the authorizing officer are documented in our customer risk register. The decision is reviewed at the next periodic account review.'
+    ],
+    correct: 1,
+    why: 'Experience-based decisions without documentation are ungoverned. EDD decisions require formal documentation, named authorization, and periodic review.',
+    phrase: '"EDD findings, risk assessment, rationale, and authorizing officer documented. Reviewed at next periodic review."',
+    tags: ['fsa', 'aml', 'evidence'],
+    jaHint: '高リスク顧客の承認はEDD所見・リスク評価・承認理由・承認者を文書化し定期レビューで確認する。'
+  },
+  {
+    id: 28, cat: 'cross-border', diff: 3,
+    inspector: 'Cross-border Scenario',
+    context: 'China HQ requests raw KYC data for all Japan customers to be sent to China servers for global fraud analysis.',
+    q: 'What is your response?',
+    opts: [
+      '"Fraud analysis is important for security. We will transfer the data."',
+      '"We must review this against Japan\'s Act on Protection of Personal Information and JFSA data governance requirements. Cross-border transfer of Japan customer KYC data requires explicit legal basis and customer consent or exemption."'
+    ],
+    correct: 1,
+    why: 'Japan customer KYC data is personal data under APPI. Cross-border transfer to China without legal basis violates APPI and JFSA data governance requirements.',
+    phrase: '"Review APPI legal basis, JFSA data governance, and customer consent requirements before any cross-border KYC transfer."',
+    tags: ['cross-border', 'fsa', 'aml'],
+    jaHint: '日本顧客のKYCデータは個人情報。APPIに基づく適法根拠なく中国へ移転することは禁止。'
+  },
+  {
+    id: 29, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'An inspector asks how you track outstanding AML findings from your annual review.',
+    q: 'Which response shows a mature AML finding tracking process?',
+    opts: [
+      '"We note the main findings and address them over time."',
+      '"AML review findings are tracked in a remediation register with risk ratings, assigned owners, target dates, and progress reported to the compliance committee monthly."'
+    ],
+    correct: 1,
+    why: '"Note and address over time" implies no structure. A remediation register with ownership, timelines, and compliance committee reporting demonstrates governance maturity.',
+    phrase: '"Remediation register with owners, target dates, and monthly compliance committee reporting."',
+    tags: ['english', 'fsa', 'aml'],
+    jaHint: 'AMLレビューの指摘事項は「是正台帳・担当者・期限・月次コンプライアンス委員会報告」で追跡する。'
+  },
+  {
+    id: 30, cat: 'fsa', diff: 3,
+    inspector: 'JFSA Inspector',
+    context: 'The inspector reviews your blockchain analytics coverage.',
+    q: '"How do you screen transactions from unhosted wallets (self-custody)?"',
+    opts: [
+      'We allow unhosted wallet transfers as they are common in the crypto ecosystem.',
+      'Unhosted wallet transfers are screened through blockchain analytics for risk indicators including exposure to darknet markets, mixers, and sanctioned entities. High-risk unhosted wallets trigger enhanced due diligence.'
+    ],
+    correct: 1,
+    why: 'Unhosted wallet transfers carry higher AML risk. The JFSA expects blockchain analytics screening for risk indicators and enhanced due diligence for high-risk unhosted wallet interactions.',
+    phrase: '"Blockchain analytics screening for darknet, mixer, and sanctions exposure. High-risk triggers EDD."',
+    tags: ['fsa', 'aml', 'evidence'],
+    jaHint: 'アンホステッドウォレットはブロックチェーン分析でダークネット・ミキサー・制裁リスクをスクリーニングし、高リスクにはEDDを適用する。'
+  },
+
+  // ── BATCH 3: PRODUCT LOCALIZATION & TOKEN LISTING (ids 31–45) ──────────────────
+  {
+    id: 31, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: 'CryptoX Japan is under inspection.',
+    q: '"Do you conduct legal review before listing a new token for Japanese customers?"',
+    opts: [
+      'We list tokens that are already available on our global exchange.',
+      'Yes. Every token must pass a Japan-specific legal review including FIEA securities analysis, AML risk assessment, and market integrity evaluation before being listed for Japan customers.'
+    ],
+    correct: 1,
+    why: 'Global availability does not mean Japan compliance. The JFSA expects a Japan-specific token listing process including FIEA analysis to determine if a token qualifies as a security.',
+    phrase: '"Japan-specific review: FIEA securities analysis, AML risk assessment, market integrity evaluation before listing."',
+    tags: ['fsa', 'token-listing', 'governance'],
+    jaHint: '新規トークン上場は金商法の有価証券該当性・AMLリスク・市場健全性の日本独自審査が必要。'
+  },
+  {
+    id: 32, cat: 'evidence', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Please show evidence of your last token delisting risk review."',
+    opts: [
+      'We delist tokens when major problems are identified. We can search for previous cases.',
+      'Yes. We maintain a token risk monitoring register. Periodic reviews are documented, and delisting decisions include risk rationale, regulatory considerations, and customer notification records.'
+    ],
+    correct: 1,
+    why: 'Reactive delisting without documented periodic reviews is insufficient. The JFSA expects ongoing token monitoring with documented review decisions and customer notification records.',
+    phrase: '"Token risk monitoring register with periodic review records, delisting rationale, and customer notification records."',
+    tags: ['fsa', 'evidence', 'token-listing'],
+    jaHint: 'トークンの上場廃止は定期的なリスク監視台帳・廃止理由・顧客通知記録の文書化が必要。'
+  },
+  {
+    id: 33, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector is reviewing your Japanese customer interface.',
+    q: '"Your Japanese-language risk disclosures appear to be machine-translated from English. Can you confirm they are legally reviewed?"',
+    opts: [
+      '"The translation is accurate. Machine translation quality is very high now."',
+      '"That is a valid concern. I acknowledge the gap. We are engaging a Japanese legal specialist to review and certify all customer-facing disclosures. I can provide the remediation timeline."'
+    ],
+    correct: 1,
+    why: 'Machine translation of legal disclosures is unacceptable. The JFSA requires legally accurate Japanese-language risk disclosures. Acknowledging the gap and showing corrective action is correct.',
+    phrase: '"Japanese legal specialist engaged to review and certify all disclosures. Remediation timeline available."',
+    tags: ['fsa', 'pressure', 'localization'],
+    jaHint: 'リスク開示文書は法的専門家によるレビューが必要。機械翻訳のみは許容されない。'
+  },
+  {
+    id: 34, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you manage the risk that a token listed on your Japan exchange may later be classified as a security?"',
+    opts: [
+      'We would delist it when the JFSA instructs us to.',
+      'We maintain ongoing legal monitoring of all listed tokens. If a reclassification risk emerges, we suspend trading, initiate a FIEA review, and proactively engage the JFSA before any formal ruling.'
+    ],
+    correct: 1,
+    why: 'Waiting for JFSA instruction is reactive and risky. Proactive monitoring, suspension on risk identification, and regulator engagement demonstrates strong compliance culture.',
+    phrase: '"Ongoing legal monitoring. On reclassification risk: suspend trading, initiate FIEA review, engage JFSA proactively."',
+    tags: ['fsa', 'token-listing', 'governance'],
+    jaHint: 'トークンの有価証券再分類リスクは継続的監視・取引停止・FIEA審査・JFSA事前相談で対応する。'
+  },
+  {
+    id: 35, cat: 'cross-border', diff: 3,
+    inspector: 'Cross-border Scenario',
+    context: 'China product team adds a new DeFi staking feature to the Japan platform without Japan compliance review.',
+    q: 'What is the appropriate response as Japan CCO?',
+    opts: [
+      '"DeFi features are popular. I will check if there are any issues later."',
+      '"I will formally escalate this. All new product features for Japan must pass our Japan compliance review process before deployment. I will initiate an immediate post-deployment risk assessment and suspend the feature if FIEA risk is identified."'
+    ],
+    correct: 1,
+    why: 'Unauthorized product deployment bypasses Japan compliance controls. The Japan CCO must escalate, assess, and suspend if risk is identified — not review casually later.',
+    phrase: '"Formal escalation. Immediate post-deployment risk assessment. Suspend if FIEA risk identified."',
+    tags: ['cross-border', 'fsa', 'token-listing'],
+    jaHint: '日本向けの新機能は日本のコンプライアンス審査が必須。無断展開は即時エスカレーション・事後評価・必要なら停止。'
+  },
+  {
+    id: 36, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you ensure Japanese customer risk disclosures comply with the PSA advertisement regulations?"',
+    opts: [
+      'We adapt our global disclaimers for the Japan market.',
+      'Japan customer-facing advertisements and disclosures are reviewed by Japan legal counsel against PSA and JFSA guideline requirements before publication. A review log is maintained.'
+    ],
+    correct: 1,
+    why: 'Adapting global disclaimers without Japan legal review risks PSA non-compliance. Japan-specific legal review with documented sign-off is required for all customer communications.',
+    phrase: '"Reviewed by Japan legal counsel against PSA and JFSA guidelines before publication. Review log maintained."',
+    tags: ['fsa', 'localization', 'governance'],
+    jaHint: '日本向け広告・開示文書は資金決済法・JFSA指針に照らして日本の法律顧問がレビューし記録を残す。'
+  },
+  {
+    id: 37, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'The JFSA asks about your security policy governance for the Japan platform.',
+    q: 'Which sentence best describes a well-governed security policy for a Japan CASP?',
+    opts: [
+      '"We follow our global security policies which are updated regularly."',
+      '"Japan CASP security policies are documented, reviewed against JFSA and FISC guidelines annually, version-controlled, and approved by the Japan entity board."'
+    ],
+    correct: 1,
+    why: 'Global policies without Japan-specific review may not capture JFSA and FISC requirements. Japan-specific review, board approval, and version control signal governance maturity.',
+    phrase: '"Reviewed against JFSA and FISC guidelines annually, version-controlled, Japan board approved."',
+    tags: ['english', 'fsa', 'governance'],
+    jaHint: 'セキュリティポリシーはJFSA・FISCガイドラインに照らして年次レビューし、日本法人の取締役会が承認する。'
+  },
+  {
+    id: 38, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector presses on your token listing governance.',
+    q: '"A competitor exchange just had a token delisted by the JFSA. You list the same token. What have you done?"',
+    opts: [
+      '"Our token is fine. The other exchange had different issues."',
+      '"Yes, we are aware of this. We immediately initiated a regulatory risk review of our listing. I can share the review outcome and our decision rationale."'
+    ],
+    correct: 1,
+    why: 'Dismissing a peer enforcement action signals complacency. Proactive review and documented decision rationale shows regulatory awareness expected of a Japan CASP.',
+    phrase: '"Immediately initiated regulatory risk review of our listing. Review outcome and rationale available."',
+    tags: ['fsa', 'pressure', 'token-listing'],
+    jaHint: '他社の行政処分を受けて自社の同一トークンの上場リスクを即時審査し、判断根拠を文書化する。'
+  },
+  {
+    id: 39, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you handle Japan-specific customer complaints about crypto asset transactions?"',
+    opts: [
+      'Customer support handles complaints through our global ticket system.',
+      'Japan customer complaints are handled by a dedicated Japan-based team following our documented complaint management process. Complaints are tracked, resolved within defined timelines, and reported to Japan management quarterly.'
+    ],
+    correct: 1,
+    why: 'A global ticket system without Japan-specific tracking, timelines, and management reporting does not meet JFSA customer protection expectations.',
+    phrase: '"Japan-based team, documented process, tracked with defined timelines, quarterly management reporting."',
+    tags: ['fsa', 'localization', 'evidence'],
+    jaHint: '日本顧客の苦情は日本拠点のチームが管理・追跡し、定期的に経営層へ報告する体制が必要。'
+  },
+  {
+    id: 40, cat: 'evidence', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Show me your security KPIs and how they are reported to the Japan board."',
+    opts: [
+      'Security metrics are reported to global management. The Japan board is informed when needed.',
+      'Security KPIs including incident response times, blockchain screening coverage rate, cold wallet ratio, and AML alert resolution rate are tracked monthly and formally reported to the Japan board quarterly.'
+    ],
+    correct: 1,
+    why: '"Informed when needed" is not governance. The JFSA expects Japan board-level security reporting with crypto-specific metrics on a defined schedule.',
+    phrase: '"Crypto-specific KPIs tracked monthly. Formally reported to Japan board quarterly."',
+    tags: ['fsa', 'evidence', 'governance'],
+    jaHint: '暗号資産事業特有のKPI（コールドウォレット比率・スクリーニングカバレッジ等）を月次追跡し四半期に日本取締役会へ報告する。'
+  },
+  {
+    id: 41, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'The global CISO asks the Japan team to skip JFSA-required cold wallet audit to meet a product launch deadline.',
+    q: 'What is your response?',
+    opts: [
+      '"Product launches are important. We will complete the audit after launch."',
+      '"The cold wallet audit is a JFSA regulatory requirement. I cannot skip or defer it. I will escalate the conflict between the deadline and the regulatory obligation to Japan senior management."'
+    ],
+    correct: 1,
+    why: 'JFSA cold wallet audit requirements are non-negotiable. Deferring a mandatory audit creates regulatory exposure. Escalation to Japan senior management is the correct path.',
+    phrase: '"Cannot defer a JFSA mandatory audit. Escalating conflict between deadline and regulatory obligation."',
+    tags: ['cross-border', 'fsa', 'custody'],
+    jaHint: 'JFSAが要求するコールドウォレット監査はグローバルCISOの指示でも延期できない。経営層へのエスカレーションが正解。'
+  },
+  {
+    id: 42, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you handle Japanese customer requests to withdraw crypto assets to high-risk unhosted wallets?"',
+    opts: [
+      'Customers can freely withdraw to any wallet they choose.',
+      'Withdrawal requests to unhosted wallets are screened through blockchain analytics. High-risk destination wallets trigger enhanced due diligence, and withdrawals to sanctioned addresses are blocked and documented.'
+    ],
+    correct: 1,
+    why: 'Unrestricted withdrawals to high-risk wallets create AML exposure. The JFSA expects blockchain analytics screening, EDD for high-risk wallets, and blocking of sanctioned addresses.',
+    phrase: '"Blockchain analytics screening on withdrawal. High-risk wallets trigger EDD. Sanctioned addresses blocked and documented."',
+    tags: ['fsa', 'aml', 'access'],
+    jaHint: '出金先のアンホステッドウォレットはスクリーニング必須。高リスクはEDD、制裁対象は遮断・記録。'
+  },
+  {
+    id: 43, cat: 'english', diff: 1,
+    inspector: 'English Phrase Practice',
+    context: 'A JFSA inspector asks you to explain your customer asset protection framework.',
+    q: 'Which answer best demonstrates customer asset protection maturity?',
+    opts: [
+      '"Customer funds are safe with us. We take security very seriously."',
+      '"Customer crypto assets are held in segregated cold wallets at or above the statutory minimum ratio. Assets are independently audited, and a reserve fund exists to compensate customers in case of loss."'
+    ],
+    correct: 1,
+    why: '"Safe" and "seriously" are claims without evidence. Cold wallet segregation, statutory ratio compliance, independent audit, and reserve fund demonstrate structured customer protection.',
+    phrase: '"Segregated cold wallets at or above statutory ratio, independently audited, reserve fund in place."',
+    tags: ['english', 'fsa', 'custody'],
+    jaHint: '顧客資産保護は「分別コールドウォレット・法定比率以上・独立監査・補償準備金」で説明する。'
+  },
+  {
+    id: 44, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Final Pressure)',
+    context: 'The inspector questions Japan entity independence.',
+    q: '"Does the Japan CISO have authority to halt trading if a critical security risk is found in your hot wallet system, even if China HQ disagrees?"',
+    opts: [
+      '"The Japan CISO would need to consult HQ before taking such action."',
+      '"Yes. The Japan CISO has documented board-approved authority to invoke emergency measures including trading suspension for critical security risks. This authority is independent of HQ and is exercised under Japan regulatory obligations."'
+    ],
+    correct: 1,
+    why: 'The JFSA requires assurance that the Japan entity can act independently to protect customers. HQ-dependent emergency authority is a governance failure for a Japan CASP.',
+    phrase: '"Board-approved independent authority to suspend trading for critical risk. Not dependent on HQ approval."',
+    tags: ['fsa', 'pressure', 'governance', 'cross-border'],
+    jaHint: '日本CISOは緊急時に取引停止を独自判断できる取締役会承認の権限を持ち、HQの承認不要であることを示す。'
+  },
+  {
+    id: 45, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: 'The inspector reviews your vendor risk for blockchain analytics.',
+    q: '"Your blockchain analytics vendor recently lost certification. What is your process for managing this?"',
+    opts: [
+      '"We will wait for them to recertify before taking action."',
+      '"Our vendor contracts include certification maintenance requirements. Upon loss of certification, we immediately assess the impact on our screening coverage, activate our backup screening process, and initiate vendor remediation or replacement review."'
+    ],
+    correct: 1,
+    why: 'Waiting passively for vendor recertification creates an AML coverage gap. The JFSA expects contractual requirements, backup processes, and active vendor risk management.',
+    phrase: '"Assess screening coverage impact, activate backup process, initiate vendor remediation or replacement."',
+    tags: ['fsa', 'aml', 'governance'],
+    jaHint: 'ブロックチェーン分析ベンダーの認証失効は「影響評価・バックアップ起動・ベンダー改善または変更」で即時対応する。'
+  },
+
+  // ── BATCH 4: CYBER SECURITY CONTROLS (ids 46–60) ──────────────────
+  {
+    id: 46, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: 'CryptoX Japan is under inspection.',
+    q: '"How do you ensure mobile devices used by Japan staff do not expose hot wallet access credentials?"',
+    opts: [
+      'Staff are instructed not to access wallet systems from personal devices.',
+      'Devices accessing hot wallet management systems are enrolled in our MDM solution with certificate-based authentication enforced. Personal devices are prohibited from hot wallet access by technical controls, not policy alone.'
+    ],
+    correct: 1,
+    why: 'Policy without technical enforcement is insufficient. The JFSA expects MDM enrollment, certificate-based authentication, and technical blocking of personal device access for sensitive wallet systems.',
+    phrase: '"MDM enrolled, certificate-based auth enforced, personal devices technically blocked from hot wallet access."',
+    tags: ['fsa', 'access', 'evidence'],
+    jaHint: 'ホットウォレットアクセスはMDM登録・証明書認証・個人端末のテクニカルブロックで保護する。'
+  },
+  {
+    id: 47, cat: 'evidence', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Can you provide documentation showing your security team\'s crypto-specific qualifications?"',
+    opts: [
+      'Our security team has extensive experience in the crypto industry.',
+      'Yes. We maintain qualification and training records for all security staff. Relevant credentials include blockchain security certifications, and crypto-specific AML training completion is documented for AML staff.'
+    ],
+    correct: 1,
+    why: 'Experience claims are not evidence. The JFSA expects documented qualifications, blockchain-specific certifications, and crypto AML training records.',
+    phrase: '"Qualification records, blockchain security certifications, and crypto AML training documented."',
+    tags: ['fsa', 'evidence'],
+    jaHint: 'セキュリティ担当者のブロックチェーンセキュリティ資格・暗号資産AML研修記録を文書化して提示できる状態にする。'
+  },
+  {
+    id: 48, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you manage the risk of employees who have access to both customer KYC data and hot wallet signing keys?"',
+    opts: [
+      'Senior staff need broad access to manage operations efficiently.',
+      'We apply strict separation of duties. Access to customer KYC data and hot wallet signing authority are technically separated roles. No individual holds both simultaneously without documented exception and management approval.'
+    ],
+    correct: 1,
+    why: 'Combined access to KYC data and signing keys creates catastrophic insider threat risk. The JFSA expects strict technical separation of duties for these high-risk access combinations.',
+    phrase: '"Strict separation: KYC access and signing authority are technically separate roles. No individual holds both without documented exception."',
+    tags: ['fsa', 'access', 'governance'],
+    jaHint: 'KYCデータとホットウォレット署名権限の兼務は技術的に分離し、例外は文書化・承認が必要。'
+  },
+  {
+    id: 49, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector has reviewed your hot wallet management.',
+    q: '"Your hot wallet signing process does not appear to require multi-party authorization. Is a single private key used for signing?"',
+    opts: [
+      '"Our signing system is secure. Single key is sufficient for operational efficiency."',
+      '"Thank you for identifying this concern. We acknowledge multi-party authorization is required for our hot wallet signing process. We have initiated a project to implement MPC or multi-sig, and I can provide the implementation timeline."'
+    ],
+    correct: 1,
+    why: 'Single-key hot wallet signing is a critical security and governance gap. The JFSA expects multi-party authorization for hot wallet operations. Acknowledging and showing a remediation plan is the correct response.',
+    phrase: '"Acknowledge the gap. Implementing MPC or multi-sig for hot wallet signing. Timeline available."',
+    tags: ['fsa', 'pressure', 'custody'],
+    jaHint: 'ホットウォレットの単一鍵署名はJFSA重大ギャップ。MPCまたはマルチシグ導入計画を示す。'
+  },
+  {
+    id: 50, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'China HQ proposes to centralize all hot wallet key management in China for operational efficiency.',
+    q: 'What concern should the Japan CCO raise?',
+    opts: [
+      '"Centralization is more efficient. This should be fine."',
+      '"We must assess this against JFSA requirements for Japan entity control of customer assets, FISC data governance, and the risk of Japan customer assets being controlled entirely outside Japan."'
+    ],
+    correct: 1,
+    why: 'Centralizing Japan customer key management in China creates JFSA compliance, FISC data governance, and sovereignty risks that must be assessed before any change.',
+    phrase: '"Assess JFSA entity control requirements, FISC data governance, and Japan customer asset sovereignty risks."',
+    tags: ['cross-border', 'fsa', 'custody'],
+    jaHint: '日本顧客資産の鍵管理を中国に集約することはJFSAの日本法人管理要件・FISC・資産主権リスクを伴う。'
+  },
+  {
+    id: 51, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Does your Japan entity have a documented information security policy approved by Japan management?"',
+    opts: [
+      'Yes, we follow our global group security policy.',
+      'Yes. Japan entity has a standalone information security policy formally approved by Japan board, communicated to all Japan staff, and reviewed annually against JFSA guidelines and FISC standards.'
+    ],
+    correct: 1,
+    why: 'A global policy without Japan-specific approval and JFSA/FISC alignment is insufficient. The Japan entity must have its own policy with Japan board approval.',
+    phrase: '"Standalone Japan policy, Japan board approved, reviewed against JFSA guidelines and FISC standards annually."',
+    tags: ['fsa', 'governance'],
+    jaHint: '日本法人は独自の情報セキュリティポリシーを日本取締役会が承認し、JFSA・FISCに照らして年次レビューする。'
+  },
+  {
+    id: 52, cat: 'english', diff: 1,
+    inspector: 'English Phrase Practice',
+    context: 'An inspector asks how you respond when a new critical vulnerability affects your exchange trading engine.',
+    q: 'Which answer best describes a mature vulnerability response for a crypto exchange?',
+    opts: [
+      '"We patch it when our development team has time in the sprint."',
+      '"Upon identification of a critical vulnerability in our trading engine, we assess customer asset exposure within 4 hours, implement compensating controls, and apply the patch within our defined critical SLA with management notification."'
+    ],
+    correct: 1,
+    why: '"When we have time" implies no urgency framework. A time-bound exposure assessment, compensating controls, and SLA-based patching with management notification is expected for a Japan CASP.',
+    phrase: '"Customer asset exposure assessed within 4 hours, compensating controls implemented, patched within critical SLA."',
+    tags: ['english', 'fsa', 'evidence'],
+    jaHint: '取引エンジンの重大脆弱性は「4時間以内の顧客資産影響評価・補完的統制・クリティカルSLA内パッチ適用」で対応する。'
+  },
+  {
+    id: 53, cat: 'fsa', diff: 3,
+    inspector: 'JFSA Inspector',
+    context: 'The inspector reviews your DLP controls for private key material.',
+    q: '"How do you prevent private key material from being transmitted outside your secure key management environment?"',
+    opts: [
+      'Access to key management systems is restricted to authorized staff.',
+      'Private key material never exists in plaintext outside HSMs. DLP controls detect and block any attempt to extract raw key material. Key operations are performed within HSM boundaries with all operations cryptographically logged.'
+    ],
+    correct: 1,
+    why: 'Access restriction alone does not prevent key extraction. The JFSA expects HSM-boundary key operations, technical blocking of extraction, and cryptographic audit logging.',
+    phrase: '"Key material never in plaintext outside HSM. DLP blocks extraction. All operations cryptographically logged."',
+    tags: ['fsa', 'custody', 'evidence'],
+    jaHint: '秘密鍵はHSM外で平文として存在させない。DLPで抽出を技術的にブロックし、全操作を暗号学的にログする。'
+  },
+  {
+    id: 54, cat: 'evidence', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Show me evidence that your cold wallet custody controls are effective, not just documented."',
+    opts: [
+      'Our cold wallet procedures are well documented and followed by the team.',
+      'We conduct quarterly cold wallet integrity tests including unannounced access control tests, balance reconciliation against blockchain records, and HSM tamper evidence inspection. Test reports are available.'
+    ],
+    correct: 1,
+    why: 'Documentation without testing proves nothing. Quarterly integrity tests, unannounced access tests, blockchain reconciliation, and HSM tamper checks demonstrate operational effectiveness.',
+    phrase: '"Quarterly integrity tests: unannounced access control tests, blockchain reconciliation, HSM tamper inspection."',
+    tags: ['fsa', 'evidence', 'custody'],
+    jaHint: 'コールドウォレット統制の有効性は「抜き打ちアクセステスト・ブロックチェーン残高照合・HSM改ざん確認」で証明する。'
+  },
+  {
+    id: 55, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector questions your incident response capacity.',
+    q: '"Your Japan security team is very small for the size of your operation. Is that adequate?"',
+    opts: [
+      '"Our Japan team is highly skilled and we have never had a major incident."',
+      '"We acknowledge the resource risk. This risk is documented, and we have compensating controls including 24/7 SOC support from a Japan-qualified security operations provider and a documented escalation path to senior management."'
+    ],
+    correct: 1,
+    why: '"No major incident" is not a control. Documenting the staffing risk with compensating controls — a qualified external SOC and escalation documentation — shows the JFSA systematic risk management.',
+    phrase: '"Staffing risk documented. Compensating control: 24/7 Japan-qualified SOC plus documented escalation path."',
+    tags: ['fsa', 'pressure', 'governance'],
+    jaHint: '人員不足リスクは「リスク文書化・日本適格SOCによる24時間監視・エスカレーション経路」で対応を示す。'
+  },
+  {
+    id: 56, cat: 'cross-border', diff: 3,
+    inspector: 'Cross-border Scenario',
+    context: 'China HQ requests that Japan customer transaction monitoring alerts be reviewed by the China AML team for efficiency.',
+    q: 'What must the Japan CCO address before agreeing?',
+    opts: [
+      '"Global efficiency is good. We will allow China team to review Japan alerts."',
+      '"We must address APPI compliance for sharing customer transaction data cross-border, ensure Japan CCO retains final STR filing authority, and document the arrangement for JFSA transparency."'
+    ],
+    correct: 1,
+    why: 'Sharing Japan customer transaction alert data cross-border raises APPI issues. Japan CCO must retain STR filing authority and the arrangement must be disclosed to the JFSA.',
+    phrase: '"Address APPI compliance, retain Japan CCO STR authority, document for JFSA transparency."',
+    tags: ['cross-border', 'fsa', 'aml'],
+    jaHint: 'アラートデータの越境共有はAPPI・STR届出権限の日本側保持・JFSA透明性の確保が必要。'
+  },
+  {
+    id: 57, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you verify that your Japan smart contract deployments do not introduce security vulnerabilities?"',
+    opts: [
+      'Our development team reviews smart contracts before deployment.',
+      'Smart contracts deployed on the Japan platform undergo mandatory independent security audits by certified blockchain security firms before deployment. Audit reports are retained and findings tracked to resolution.'
+    ],
+    correct: 1,
+    why: 'Internal developer review is insufficient for smart contract security. The JFSA expects independent audit by qualified blockchain security firms with documented findings and remediation.',
+    phrase: '"Independent audit by certified blockchain security firm before deployment. Reports retained, findings tracked."',
+    tags: ['fsa', 'evidence', 'governance'],
+    jaHint: 'スマートコントラクトは資格のある独立したブロックチェーンセキュリティ会社が監査し、指摘事項を追跡管理する。'
+  },
+  {
+    id: 58, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'The inspector asks about your approach to managing security for remote engineers who can access Japan wallet systems.',
+    q: 'Which answer demonstrates secure remote access controls for wallet systems?',
+    opts: [
+      '"Remote engineers use VPN and we trust them to follow security procedures."',
+      '"Remote access to wallet management systems requires VPN with certificate-based MFA, endpoint compliance verification, privileged session recording, and is restricted to named individuals with documented justification."'
+    ],
+    correct: 1,
+    why: '"Trust and VPN" is insufficient for wallet system access. Certificate-based MFA, endpoint compliance, session recording, and named individual restriction are expected for Japan CASP wallet system remote access.',
+    phrase: '"Certificate-based MFA, endpoint compliance, privileged session recording, named individuals only."',
+    tags: ['english', 'fsa', 'access'],
+    jaHint: 'ウォレットシステムへのリモートアクセスは証明書MFA・エンドポイント準拠・特権セッション記録・指名個人のみで管理する。'
+  },
+  {
+    id: 59, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How is security risk formally reported to your Japan board?"',
+    opts: [
+      'The CISO reports to the Japan representative director when there are serious issues.',
+      'Security risk including cold wallet ratio, AML alert metrics, incident status, and regulatory findings are formally reported to the Japan board on a quarterly schedule as part of the risk governance framework.'
+    ],
+    correct: 1,
+    why: 'Ad hoc reporting is insufficient. The JFSA expects regular, structured board reporting with crypto-specific risk metrics as part of a formal governance framework.',
+    phrase: '"Cold wallet ratio, AML metrics, incident status, regulatory findings formally reported to Japan board quarterly."',
+    tags: ['fsa', 'governance'],
+    jaHint: 'コールドウォレット比率・AMLメトリクス・インシデント・規制所見を四半期ごと日本取締役会へ正式報告する。'
+  },
+  {
+    id: 60, cat: 'evidence', diff: 3,
+    inspector: 'JFSA Inspector',
+    context: 'The inspector asks to see your annual security risk assessment.',
+    q: 'What should the assessment contain to satisfy the JFSA for a crypto exchange?',
+    opts: [
+      'A list of known cyber risks and our plan to address them.',
+      'A formal risk assessment covering crypto-specific threat landscape, asset inventory including wallet systems and customer data, control gaps against JFSA and FISC requirements, residual risk ratings, treatment plans, and Japan board sign-off.'
+    ],
+    correct: 1,
+    why: 'A simple risk list lacks the structure the JFSA expects. A formal assessment must include crypto-specific threats, wallet asset scope, JFSA/FISC control gap analysis, residual risk, and board governance.',
+    phrase: '"Crypto threat landscape, wallet asset inventory, JFSA/FISC control gaps, residual risk, treatment plans, board sign-off."',
+    tags: ['fsa', 'evidence', 'governance'],
+    jaHint: 'リスクアセスメントは「暗号資産脅威・ウォレット資産台帳・JFSA/FISCギャップ・残余リスク・対応計画・取締役会承認」の6要素が必要。'
+  },
+
+  // ── BATCH 5: GOVERNANCE & REGULATORY REPORTING (ids 61–75) ──────────────────
+  {
+    id: 61, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: 'CryptoX Japan is under inspection.',
+    q: '"How do you manage security risks introduced by freelance blockchain developers?"',
+    opts: [
+      'Freelancers sign an NDA and work under contractor agreements.',
+      'Freelance developers are subject to background checks, have access restricted to development environments only, cannot access production wallet systems, and have all access revoked immediately upon contract completion.'
+    ],
+    correct: 1,
+    why: 'NDA alone is insufficient. The JFSA expects background checks, production wallet access prohibition, and immediate revocation for contractors — especially those with blockchain expertise.',
+    phrase: '"Background checks, restricted to dev environments, no production wallet access, immediate revocation on contract end."',
+    tags: ['fsa', 'access'],
+    jaHint: 'フリーランス開発者はバックグラウンドチェック・開発環境のみのアクセス・本番ウォレット禁止・契約終了即時停止が必要。'
+  },
+  {
+    id: 62, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'China HQ wants to use a single shared admin account for all Japan exchange backend systems.',
+    q: 'What should the Japan CISO do?',
+    opts: [
+      '"Shared accounts are common in operations. We will accept this."',
+      '"Shared admin accounts eliminate individual accountability required by JFSA. I will refuse and propose individual privileged accounts with PAM, ensuring all Japan system access is attributable to a named individual."'
+    ],
+    correct: 1,
+    why: 'Shared admin accounts violate JFSA accountability requirements. The Japan CISO must refuse and propose a compliant alternative with individual accountability.',
+    phrase: '"Refuse shared accounts. Propose individual PAM-managed privileged accounts for JFSA accountability."',
+    tags: ['cross-border', 'fsa', 'access'],
+    jaHint: '共有管理者アカウントはJFSAの個人説明責任要件に違反。個人単位のPAM管理に変更するよう提案する。'
+  },
+  {
+    id: 63, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'A JFSA inspector asks how you communicate AML obligations to Japan exchange staff.',
+    q: 'Which response best demonstrates an effective AML awareness program?',
+    opts: [
+      '"We send AML updates by email when there are regulatory changes."',
+      '"All Japan exchange staff complete mandatory annual AML/CFT training covering crypto-specific risks. Role-specific training is provided for AML analysts, and policy acknowledgment is collected and retained."'
+    ],
+    correct: 1,
+    why: 'Email updates are not training. Mandatory annual training with crypto-specific content, role-specific modules, and documented policy acknowledgment demonstrates a structured AML program.',
+    phrase: '"Annual mandatory AML/CFT training, crypto-specific content, role-specific modules, policy acknowledgment retained."',
+    tags: ['english', 'fsa', 'aml'],
+    jaHint: 'AML義務の周知は「年次必須研修・暗号資産特有内容・役割別モジュール・ポリシー受領記録」で証明する。'
+  },
+  {
+    id: 64, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector found inconsistencies in your blockchain analytics alert logs.',
+    q: '"There are missing alert records for a three-day period. What happened?"',
+    opts: [
+      '"There may have been a system issue. We are not sure what caused it."',
+      '"We have investigated this gap. A logging configuration change caused the interruption. It has been corrected, the root cause is documented, and we have assessed whether any suspicious activity occurred during the gap."'
+    ],
+    correct: 1,
+    why: '"Not sure" is alarming. The JFSA requires root cause analysis, corrective action, and retrospective review of any gap period in AML alert logging.',
+    phrase: '"Root cause identified, corrected, retrospective suspicious activity review completed for the gap period."',
+    tags: ['fsa', 'pressure', 'aml'],
+    jaHint: 'AMLアラートログの欠落は「原因究明・是正措置・欠落期間の遡及的疑わしい活動確認」の三点で答える。'
+  },
+  {
+    id: 65, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Do you have a formal process for approving exceptions to your AML transaction monitoring rules?"',
+    opts: [
+      'AML rule exceptions are handled by the AML team on a case-by-case basis.',
+      'Yes. AML rule exceptions require formal justification, risk assessment, CCO approval, defined expiry, and are tracked in a rule exception register reviewed monthly by the compliance committee.'
+    ],
+    correct: 1,
+    why: 'Ad hoc rule exceptions without CCO approval and tracking create unmonitored AML gaps. The JFSA expects a governed exception process with compliance committee oversight.',
+    phrase: '"Formal justification, CCO approval, expiry defined, tracked in exception register, monthly compliance committee review."',
+    tags: ['fsa', 'aml', 'governance'],
+    jaHint: 'AMLルール例外は「正式申請・CCO承認・期限・例外台帳・月次コンプライアンス委員会レビュー」で統制する。'
+  },
+  {
+    id: 66, cat: 'fsa', diff: 3,
+    inspector: 'JFSA Inspector',
+    context: 'The inspector reviews your cloud security posture for exchange infrastructure.',
+    q: '"Which cloud security controls are in place for your Japan exchange production environment?"',
+    opts: [
+      'We use a major cloud provider. Their security is very high.',
+      'We implement customer-side shared responsibility controls: network segmentation isolating wallet systems, IAM with least privilege, encryption of all customer data at rest and in transit, CSPM for misconfiguration detection, and JFSA-aligned security monitoring.'
+    ],
+    correct: 1,
+    why: 'Cloud provider security does not cover customer-side obligations. The JFSA expects active implementation of customer-controlled security measures beyond provider defaults, especially for wallet and customer data systems.',
+    phrase: '"Wallet system network isolation, IAM least privilege, encryption, CSPM, JFSA-aligned monitoring."',
+    tags: ['fsa', 'evidence', 'access'],
+    jaHint: 'クラウドは共有責任モデルを前提に、ウォレット分離・IAM最小権限・暗号化・CSPM・JFSA準拠監視を顧客側で実装する。'
+  },
+  {
+    id: 67, cat: 'evidence', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Can you demonstrate that your Japan exchange firewall rules are reviewed and current?"',
+    opts: [
+      'The infrastructure team maintains the firewall. They would flag any issues.',
+      'Firewall rules for all Japan exchange systems are reviewed quarterly. Unused rules are removed, changes require documented approval, and the last review report including the rules protecting hot wallet systems is available.'
+    ],
+    correct: 1,
+    why: '"Team would flag issues" is not evidence. The JFSA expects quarterly review, rule cleanup, documented change approval, and immediate access to review records for critical exchange systems.',
+    phrase: '"Quarterly review, unused rules removed, changes documented, hot wallet firewall review report available."',
+    tags: ['fsa', 'evidence', 'access'],
+    jaHint: 'ファイアウォールルールは四半期レビュー・不要ルール削除・変更承認記録・ホットウォレット保護ルール報告書で管理を証明する。'
+  },
+  {
+    id: 68, cat: 'cross-border', diff: 3,
+    inspector: 'Cross-border Scenario',
+    context: 'The global security team proposes replacing Japan\'s local incident response plan with a unified global IRP.',
+    q: 'What should the Japan CISO evaluate before accepting?',
+    opts: [
+      '"A global IRP is more consistent. We should adopt it."',
+      '"The global IRP must be verified to include Japan-specific requirements: JFSA regulatory reporting timelines, Japanese-language incident communications, local escalation paths including Japan police and NISC, and CASP-specific response procedures."'
+    ],
+    correct: 1,
+    why: 'Global IRPs often lack Japan-specific JFSA reporting timelines, Japanese-language communications, and local authority contacts. These are critical for Japan CASP compliance.',
+    phrase: '"Verify JFSA timelines, Japanese communications, local escalation to police and NISC, CASP-specific procedures."',
+    tags: ['cross-border', 'fsa', 'governance'],
+    jaHint: 'グローバルIRPにJFSA報告期限・日本語対応・警察・NISC連絡経路・CASP特有手順が含まれているか確認する。'
+  },
+  {
+    id: 69, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you manage the security of APIs connecting your exchange to external liquidity providers?"',
+    opts: [
+      'Our liquidity providers are large institutions. API connections use standard encryption.',
+      'Liquidity provider API connections are secured with mutual TLS authentication, rate limiting, and IP allowlisting. APIs are inventoried, and each connection is subject to annual security assessment and contractual security requirements.'
+    ],
+    correct: 1,
+    why: '"Standard encryption" is insufficient. The JFSA expects mutual TLS, rate limiting, IP allowlisting, annual assessment, and contractual security requirements for all external API connections.',
+    phrase: '"Mutual TLS, rate limiting, IP allowlisting, annual assessment, contractual security requirements."',
+    tags: ['fsa', 'access', 'evidence'],
+    jaHint: '流動性プロバイダーAPIは相互TLS・レート制限・IPホワイトリスト・年次評価・契約上のセキュリティ要件で管理する。'
+  },
+  {
+    id: 70, cat: 'english', diff: 3,
+    inspector: 'English Phrase Practice',
+    context: 'The inspector challenges your security governance maturity for the Japan CASP.',
+    q: 'Which statement best demonstrates governance maturity to the JFSA?',
+    opts: [
+      '"Our security team is experienced in blockchain and crypto security."',
+      '"Security governance for our Japan CASP follows the three lines of defense model: business units own crypto operational risk, our compliance function provides oversight against JFSA requirements, and internal audit provides independent assurance."'
+    ],
+    correct: 1,
+    why: 'Experience claims are subjective. The three lines of defense model — operational ownership, compliance oversight, and independent audit — is the framework the JFSA expects for a Japan CASP.',
+    phrase: '"Three lines of defense: business units own risk, compliance oversees JFSA alignment, audit provides assurance."',
+    tags: ['english', 'fsa', 'governance'],
+    jaHint: '「3つの防衛線」（事業部門リスクオーナー・コンプライアンス監督・内部監査）はJFSAが期待するガバナンスモデル。'
+  },
+  {
+    id: 71, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you ensure backups of critical exchange data are reliable and restorable?"',
+    opts: [
+      'Backups are automated daily and stored in the cloud.',
+      'Exchange data backups are performed daily with automated integrity verification. Restoration tests are conducted quarterly, results documented, and any failures tracked to resolution. Backup data is encrypted and stored with geographic redundancy.'
+    ],
+    correct: 1,
+    why: 'Automated backups without restoration testing prove nothing. The JFSA expects verified restorations, documented results, failure tracking, encryption, and geographic redundancy.',
+    phrase: '"Daily backups, quarterly restoration tests, results documented, encrypted, geographically redundant."',
+    tags: ['fsa', 'evidence'],
+    jaHint: 'バックアップは「日次実施・四半期復元テスト・結果文書化・暗号化・地理的冗長性」で実効性を証明する。'
+  },
+  {
+    id: 72, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector expresses concern about your third-party audit findings.',
+    q: '"Your external auditor identified 8 high-risk findings related to wallet security. Only 2 have been resolved. Why?"',
+    opts: [
+      '"High-risk findings require significant engineering resources. We are addressing them as capacity allows."',
+      '"We acknowledge the pace is insufficient. All 8 findings now have dedicated owners, executive sponsors, and hard deadlines. The remaining 6 have documented interim compensating controls. I can provide the remediation schedule."'
+    ],
+    correct: 1,
+    why: 'Resource constraints do not excuse slow remediation of high-risk wallet security findings. Showing executive ownership, hard deadlines, and interim compensating controls demonstrates accountability.',
+    phrase: '"Dedicated owners, executive sponsors, hard deadlines for all findings. Interim compensating controls documented."',
+    tags: ['fsa', 'pressure', 'governance', 'custody'],
+    jaHint: '高リスクウォレットセキュリティ指摘の未完了は「担当者・エグゼクティブ後援・期限・暫定補完統制」で対応姿勢を示す。'
+  },
+  {
+    id: 73, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you prevent phishing attacks targeting Japan customer accounts?"',
+    opts: [
+      'We educate customers about phishing risks on our help page.',
+      'We combine technical controls — anti-phishing email filters, domain monitoring for lookalike sites, MFA for all accounts, and real-time login anomaly detection — with regular customer security communications.'
+    ],
+    correct: 1,
+    why: 'Customer education alone fails when customers click phishing links. The JFSA expects defense in depth: technical filtering, domain monitoring, MFA, and anomaly detection to limit damage.',
+    phrase: '"Anti-phishing filters, domain monitoring, MFA, login anomaly detection — layered customer protection."',
+    tags: ['fsa', 'access', 'evidence'],
+    jaHint: '顧客フィッシング対策は「メールフィルタ・類似ドメイン監視・MFA・ログイン異常検知」の多層防御で示す。'
+  },
+  {
+    id: 74, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'Japan CISO discovers that China engineers have read access to Japan customer wallet transaction logs.',
+    q: 'What is the appropriate immediate action?',
+    opts: [
+      '"I will ask the China team why they need this access."',
+      '"I will immediately revoke the unauthorized access, document the incident, assess whether customer data was accessed, formally escalate to Japan senior management and legal, and assess APPI notification obligations."'
+    ],
+    correct: 1,
+    why: 'Unauthorized access to customer wallet transaction logs is a potential APPI violation requiring immediate revocation, incident documentation, data exposure assessment, and legal review for notification obligations.',
+    phrase: '"Immediate revocation, document incident, assess data access, escalate to management and legal, assess APPI notification."',
+    tags: ['cross-border', 'fsa', 'aml'],
+    jaHint: '顧客ウォレットログへの不正アクセスは即時遮断・記録・データアクセス評価・経営層＆法務エスカレーション・APPI通知義務確認が必要。'
+  },
+  {
+    id: 75, cat: 'english', diff: 1,
+    inspector: 'English Phrase Practice',
+    context: 'A JFSA inspector asks what "defense in depth" means for a crypto exchange.',
+    q: 'Which answer best explains defense in depth for a Japan CASP?',
+    opts: [
+      '"We have multiple security tools including firewalls and antivirus."',
+      '"For our exchange, defense in depth means layered controls across cold wallet isolation, hot wallet multi-party authorization, network segmentation, AML monitoring, and incident response — so no single control failure exposes customer assets."'
+    ],
+    correct: 1,
+    why: 'Listing tools is not a concept explanation. Describing crypto-specific layered controls — cold wallet isolation, MPC/multi-sig, network segmentation, AML monitoring — demonstrates CASP-relevant security understanding.',
+    phrase: '"Layered controls: cold wallet isolation, hot wallet MPA, network segmentation, AML monitoring — no single point of failure."',
+    tags: ['english', 'fsa'],
+    jaHint: '多層防御は暗号資産取引所特有の「コールドウォレット分離・ホットウォレットMPA・ネットワーク分離・AML監視」の重複レイヤーで説明する。'
+  },
+
+  // ── BATCH 6: FINAL SCENARIOS (ids 76–90) ──────────────────
+  {
+    id: 76, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: 'CryptoX Japan is under inspection.',
+    q: '"How do you handle the discovery of a zero-day vulnerability in your exchange matching engine?"',
+    opts: [
+      'We pause new orders until the vendor releases a patch.',
+      'We immediately assess customer asset exposure, implement compensating controls such as restricting order types or volume limits, notify the Japan board and JFSA if customer assets are at risk, and monitor closely until patched.'
+    ],
+    correct: 1,
+    why: 'Simple order pausing may be insufficient. The JFSA expects immediate asset exposure assessment, compensating controls, board and regulatory notification if assets are at risk, and enhanced monitoring.',
+    phrase: '"Asset exposure assessed, compensating controls implemented, Japan board and JFSA notified if assets at risk."',
+    tags: ['fsa', 'evidence', 'access'],
+    jaHint: 'マッチングエンジンのゼロデイは「顧客資産影響評価・補完的統制・日本取締役会＆JFSA通知」で即時対応する。'
+  },
+  {
+    id: 77, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector reviews a recent hot wallet compromise attempt.',
+    q: '"A social engineering attack last month targeted your hot wallet operations team. What did you do?"',
+    opts: [
+      '"The attack failed. We reminded the team to be careful."',
+      '"We treated this as a serious incident. We conducted a forensic review, assessed whether any credentials were compromised, filed a JFSA incident report, and implemented enhanced verification controls for all wallet operations personnel."'
+    ],
+    correct: 1,
+    why: 'A failed attack is still an incident requiring forensic review, credential assessment, regulatory reporting, and control enhancement. "Reminder to be careful" is not incident response.',
+    phrase: '"Forensic review, credential assessment, JFSA incident report filed, enhanced verification for wallet ops personnel."',
+    tags: ['fsa', 'pressure', 'incident'],
+    jaHint: 'ソーシャルエンジニアリング攻撃は未遂でも「フォレンジック・認証情報評価・JFSA報告・強化検証統制」で対応する。'
+  },
+  {
+    id: 78, cat: 'evidence', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Can you show that your Japan exchange DRP has been tested in the last 12 months?"',
+    opts: [
+      'We ran an internal drill but the report is still being finalized.',
+      'Yes. Our DRP test was conducted 4 months ago including a hot wallet failover simulation. I can provide the test report with scenario, participants, results, and outstanding follow-up items.'
+    ],
+    correct: 1,
+    why: 'An unfinalized report is not evidence. A completed test report with exchange-specific scenario, hot wallet failover, participants, results, and follow-up is what the JFSA requires.',
+    phrase: '"Test report available: scenario, hot wallet failover simulation, participants, results, follow-up items."',
+    tags: ['fsa', 'evidence'],
+    jaHint: 'DRPテストはホットウォレットフェイルオーバー含む「シナリオ・参加者・結果・フォローアップ」の完成した報告書が必要。'
+  },
+  {
+    id: 79, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you validate the integrity of smart contracts deployed to your Japan exchange platform?"',
+    opts: [
+      'The development team conducts code review before deployment.',
+      'Smart contracts undergo mandatory independent audit by a qualified blockchain security firm, on-chain bytecode verification after deployment, and ongoing monitoring for anomalous behavior post-launch.'
+    ],
+    correct: 1,
+    why: 'Internal code review is insufficient. The JFSA expects independent audit, bytecode verification post-deployment, and ongoing behavioral monitoring for smart contracts on a Japan CASP platform.',
+    phrase: '"Independent audit, bytecode verification post-deployment, ongoing anomaly monitoring."',
+    tags: ['fsa', 'governance'],
+    jaHint: 'スマートコントラクトは独立監査・展開後バイトコード検証・継続的異常動作監視の3段階で完全性を確保する。'
+  },
+  {
+    id: 80, cat: 'cross-border', diff: 3,
+    inspector: 'Cross-border Scenario',
+    context: 'China HQ requests that Japan customer security incident data be sent to a global dashboard in China.',
+    q: 'What governance question must the Japan CISO resolve first?',
+    opts: [
+      '"Global visibility is valuable. We should support this."',
+      '"We must resolve data ownership, whether incident data includes customer personal information subject to APPI, JFSA transparency obligations regarding incident data location, and FISC data governance requirements before proceeding."'
+    ],
+    correct: 1,
+    why: 'Incident data may contain customer personal information. APPI compliance, JFSA transparency, and FISC governance must be resolved before cross-border sharing of Japan CASP incident data.',
+    phrase: '"Resolve APPI personal data inclusion, JFSA transparency obligations, and FISC requirements first."',
+    tags: ['cross-border', 'fsa', 'governance'],
+    jaHint: 'インシデントデータの国外送信はAPPI適用可否・JFSA透明性・FISCガバナンスを先決する。'
+  },
+  {
+    id: 81, cat: 'fsa', diff: 1,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you manage physical security for your cold wallet storage facility?"',
+    opts: [
+      'Cold wallets are stored in a secure room with limited staff access.',
+      'Cold wallet storage is subject to multi-factor physical access control with biometric authentication, 24/7 CCTV monitoring, logged entry/exit records, dual-person access requirement, and annual physical security audit.'
+    ],
+    correct: 1,
+    why: '"Secure room with limited access" lacks specifics. The JFSA expects multi-factor physical access, biometrics, CCTV, dual-person access for cold wallet facilities, and documented audit.',
+    phrase: '"Biometric MFA, 24/7 CCTV, dual-person access, entry/exit logs, annual physical security audit."',
+    tags: ['fsa', 'access', 'evidence', 'custody'],
+    jaHint: 'コールドウォレット保管施設は「生体認証MFA・24時間CCTV・二人以上の立ち合い・入退室ログ・年次物理監査」で管理する。'
+  },
+  {
+    id: 82, cat: 'english', diff: 2,
+    inspector: 'English Phrase Practice',
+    context: 'A JFSA inspector asks you to describe your risk appetite for crypto asset custody.',
+    q: 'Which response demonstrates a mature risk appetite for a Japan CASP?',
+    opts: [
+      '"We aim to minimize security risk while enabling business growth."',
+      '"Our board-approved risk appetite statement specifies that we maintain zero tolerance for unauthorized customer asset loss, with defined tolerance thresholds for operational incidents, and guides our custody investment decisions."'
+    ],
+    correct: 1,
+    why: '"Minimize risk" is undefined. A board-approved risk appetite statement with zero tolerance for customer asset loss, defined operational thresholds, and a link to custody investment decisions demonstrates CASP governance maturity.',
+    phrase: '"Zero tolerance for customer asset loss. Board-approved risk appetite guides custody investment decisions."',
+    tags: ['english', 'fsa', 'governance'],
+    jaHint: 'リスクアペタイトは「顧客資産損失ゼロ許容・取締役会承認・カストディ投資判断への連動」で説明する。'
+  },
+  {
+    id: 83, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Final Pressure)',
+    context: 'The inspector has reviewed multiple areas and is summarizing.',
+    q: '"Overall, I am concerned that your Japan entity appears operationally dependent on China HQ for security decisions. What do you say?"',
+    opts: [
+      '"We operate as a global entity. China HQ support is natural and beneficial."',
+      '"Thank you for this observation. We take Japan entity independence seriously. We will conduct an immediate review of all security decision processes to ensure Japan entity authority is documented and demonstrable, and report findings to the JFSA."'
+    ],
+    correct: 1,
+    why: 'Defending HQ dependence confirms the JFSA concern. Committing to an immediate independence review and JFSA reporting is the only credible response to this finding.',
+    phrase: '"Immediate review of security decision processes to document Japan entity authority. Findings reported to JFSA."',
+    tags: ['fsa', 'pressure', 'governance', 'cross-border'],
+    jaHint: '「日本法人の独立性不足」の指摘には「即時の意思決定プロセス見直し・日本法人権限の文書化・JFSAへの報告」で誠実に対応する。'
+  },
+  {
+    id: 84, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"How do you ensure that your cloud service agreements for exchange infrastructure meet JFSA requirements?"',
+    opts: [
+      'We use standard cloud service agreements which include security terms.',
+      'Cloud contracts for Japan exchange infrastructure include Japan-specific security clauses covering FISC-aligned data handling, JFSA right-to-audit passthrough, incident notification within Japanese regulatory timelines, and data residency confirmation.'
+    ],
+    correct: 1,
+    why: 'Standard cloud agreements lack Japan-specific FISC, JFSA, and data residency requirements. These must be contractually embedded for Japan CASP cloud deployments.',
+    phrase: '"FISC-aligned data handling, JFSA audit passthrough, Japan-timeline incident notification, data residency in contracts."',
+    tags: ['fsa', 'governance'],
+    jaHint: 'クラウド契約はFISC準拠・JFSA監査権・日本タイムラインでのインシデント通知・データ所在地の確認を明示する。'
+  },
+  {
+    id: 85, cat: 'cross-border', diff: 2,
+    inspector: 'Cross-border Scenario',
+    context: 'A global project gives China HQ engineers temporary admin access to Japan exchange database servers for 14 days.',
+    q: 'What controls should the Japan CISO put in place?',
+    opts: [
+      '"14 days is short. We will allow it under standard conditions."',
+      '"Temporary HQ admin access to Japan exchange databases must have: named individual assignment, time-bounded tokens, privileged session recording, Japan CISO approval, and post-access log review. Business justification documented."'
+    ],
+    correct: 1,
+    why: 'Duration does not reduce risk. Japan exchange database admin access by HQ engineers requires full privileged access governance regardless of duration.',
+    phrase: '"Named individuals, time-bounded tokens, session recording, Japan CISO approval, post-access log review required."',
+    tags: ['cross-border', 'fsa', 'access'],
+    jaHint: '本社エンジニアの一時的な日本取引所DBへの管理者アクセスも「指名・期限・セッション記録・CISO承認・事後ログレビュー」が必要。'
+  },
+  {
+    id: 86, cat: 'fsa', diff: 3,
+    inspector: 'JFSA Inspector',
+    context: 'The inspector reviews your open-source dependency management.',
+    q: '"How do you assess the security risk of open-source libraries used in your exchange trading engine?"',
+    opts: [
+      'Our developers use well-known open-source libraries and update them regularly.',
+      'We use software composition analysis integrated into our CI/CD pipeline. All open-source dependencies are scanned for known CVEs against the NVD, and critical vulnerabilities trigger automatic build failures and remediation workflows.'
+    ],
+    correct: 1,
+    why: 'Developer judgment is insufficient for exchange-grade software. The JFSA expects automated SCA in CI/CD pipelines, NVD-based CVE scanning, and automated build gates for critical vulnerabilities.',
+    phrase: '"SCA in CI/CD pipeline, NVD CVE scanning, critical vulnerabilities trigger build failure and remediation."',
+    tags: ['fsa', 'evidence'],
+    jaHint: '取引エンジンのOSSはCI/CDパイプライン統合SCA・NVDベースのCVEスキャン・重大脆弱性のビルド自動失敗で管理する。'
+  },
+  {
+    id: 87, cat: 'evidence', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: '',
+    q: '"Please describe how you track and resolve findings from your internal AML audit."',
+    opts: [
+      'The compliance team discusses findings and works to address them over the following months.',
+      'Internal AML audit findings are logged in a remediation register with risk ratings, AML risk type classification, assigned owners, target dates, and progress reported to the Japan compliance committee monthly.'
+    ],
+    correct: 1,
+    why: 'Informal team discussion without formal tracking is not auditable. A remediation register with AML-specific classification, ownership, and compliance committee reporting is required.',
+    phrase: '"AML remediation register with risk type classification, owners, target dates, monthly compliance committee reporting."',
+    tags: ['fsa', 'evidence', 'aml'],
+    jaHint: 'AML内部監査指摘は「AMLリスク分類付き是正台帳・担当者・期限・月次コンプライアンス委員会報告」で追跡する。'
+  },
+  {
+    id: 88, cat: 'pressure', diff: 3,
+    inspector: 'JFSA Inspector (Pressure)',
+    context: 'The inspector is wrapping up.',
+    q: '"If you could identify your single biggest security governance weakness today, what would it be?"',
+    opts: [
+      '"I believe our security governance is solid. We do not have a major weakness."',
+      '"Our biggest challenge is ensuring our Japan-specific security controls documentation keeps pace with our rapid product development cycle. We have implemented a monthly documentation review as part of our sprint process to close this gap."'
+    ],
+    correct: 1,
+    why: 'Claiming no weakness destroys credibility. Self-aware identification of a real and crypto-specific gap — documentation lag in a fast-moving product — with a concrete process remedy signals governance maturity.',
+    phrase: '"Documentation lag behind product development. Monthly documentation review in sprint process implemented."',
+    tags: ['fsa', 'pressure', 'governance'],
+    jaHint: '弱点を「製品開発速度に追いつかないJapan独自の統制文書化の遅れ」と自己認識し、スプリントプロセスへの月次レビュー組み込みで対応を示す。'
+  },
+  {
+    id: 89, cat: 'english', diff: 3,
+    inspector: 'English Phrase Practice',
+    context: 'The JFSA asks you to explain your approach to continuous security improvement for the Japan exchange.',
+    q: 'Which answer best describes a mature continuous improvement posture for a Japan CASP?',
+    opts: [
+      '"We fix security issues when they are found and update our systems regularly."',
+      '"We maintain a Japan CASP security improvement roadmap driven by JFSA examination findings, FATF guidance updates, threat intelligence, crypto industry incident analysis, and FISC guideline revisions, reviewed quarterly by Japan senior management."'
+    ],
+    correct: 1,
+    why: 'Reactive fixing is not continuous improvement. A CASP-specific roadmap driven by JFSA examinations, FATF updates, threat intelligence, and FISC revisions with quarterly management review demonstrates regulatory alignment.',
+    phrase: '"Roadmap driven by JFSA findings, FATF guidance, threat intelligence, crypto incidents, and FISC revisions — quarterly review."',
+    tags: ['english', 'fsa', 'governance'],
+    jaHint: 'セキュリティ継続改善は「JFSA検査結果・FATF指針・脅威情報・暗号資産事件・FISC改訂を基にしたロードマップ＋四半期レビュー」で示す。'
+  },
+  {
+    id: 90, cat: 'fsa', diff: 2,
+    inspector: 'JFSA Inspector',
+    context: 'Final inspection question.',
+    q: '"In one sentence, what is the most important principle guiding your security program for the Japan exchange?"',
+    opts: [
+      '"To protect our exchange systems from cyber attacks."',
+      '"To protect Japan customer assets and the integrity of Japan financial markets through independent, evidence-based, and continuously improving security governance aligned with JFSA and FATF requirements."'
+    ],
+    correct: 1,
+    why: 'System protection is tactical. The JFSA cares about customer asset protection, market integrity, independent Japan governance, and regulatory alignment — values that must be articulated at the CASP CISO level.',
+    phrase: '"Protect Japan customer assets and market integrity through independent, evidence-based governance aligned with JFSA and FATF."',
+    tags: ['fsa', 'governance'],
+    jaHint: 'セキュリティプログラムの最重要原則は「顧客資産保護・市場健全性・独立したJFSA/FATF準拠の証拠に基づくガバナンス」。'
+  },
+];
+
+// ─────────────────────────────────────────────────────────────────────────────
+
+const FILL_QUESTIONS = [
+  // ── BATCH 1: CASP REGISTRATION & LICENSING (1–12) ──────────────────
+  { sentence: 'All Japan-facing crypto services operate under our valid CASP ___ under the Payment Services Act.', answer: 'registration', choices: ['registration', 'license', 'permit', 'approval'], hint: 'Official recognized status', why: '"Registration" = CASP登録。資金決済法に基づくJFSAへの事業者登録を示す正式用語。' },
+  { sentence: 'Suspicious transactions are reported to ___ within the statutory notification timeframe.', answer: 'JAFIC', choices: ['JAFIC', 'FSA', 'NISC', 'NPA'], hint: 'Japan AML intelligence unit', why: '"JAFIC" = 金融情報機関（Japan Financial Intelligence Center）。STRの届出先。' },
+  { sentence: 'Customer crypto assets are held in ___ at or above the statutory minimum ratio.', answer: 'cold wallets', choices: ['cold wallets', 'hot wallets', 'custodian accounts', 'segregated accounts'], hint: 'Offline secure storage', why: '"Cold wallets" = コールドウォレット。PSAが要求する顧客資産のオフライン保管形態。' },
+  { sentence: 'For JFSA regulatory matters, the Japan ___ makes the final compliance decision.', answer: 'CCO', choices: ['CCO', 'CISO', 'CEO', 'CFO'], hint: 'Chief Compliance Officer', why: '"CCO" = チーフコンプライアンスオフィサー。JFSA規制事項の最終判断者。' },
+  { sentence: 'Travel Rule data transmission covers originator and ___ information for qualifying transfers.', answer: 'beneficiary', choices: ['beneficiary', 'recipient', 'receiver', 'destination'], hint: 'Person receiving the funds', why: '"Beneficiary" = 受取人。FATF勧告16のトラベルルールで必須の受取人情報。' },
+  { sentence: 'Japan entity board-approved authority allows the Japan CISO to invoke ___ measures without HQ approval.', answer: 'emergency', choices: ['emergency', 'contingency', 'crisis', 'urgent'], hint: 'Immediate crisis action', why: '"Emergency" measures = 緊急措置。日本取締役会承認による日本CISOの独立した緊急対応権限。' },
+  { sentence: 'Customer asset ___ is verified through independent quarterly reconciliation and annual audit.', answer: 'segregation', choices: ['segregation', 'separation', 'isolation', 'protection'], hint: 'Keeping customer and company assets apart', why: '"Segregation" = 分別保管。顧客資産と自己資産の法的・技術的な分離を示す正式用語。' },
+  { sentence: 'Token listing requires a Japan-specific ___ analysis before being offered to Japan customers.', answer: 'FIEA', choices: ['FIEA', 'PSA', 'AML', 'FATF'], hint: 'Japan securities law', why: '"FIEA" = 金融商品取引法（Financial Instruments and Exchange Act）。トークンの有価証券該当性審査の根拠法。' },
+  { sentence: 'The Japan CCO retains final authority over STR ___ to JAFIC regardless of HQ guidance.', answer: 'filing', choices: ['filing', 'submission', 'reporting', 'notification'], hint: 'Formally submitting to the authority', why: '"Filing" = 届出。STRのJAFICへの提出権限は日本CCOが保持する。' },
+  { sentence: 'Private key material must never exist in ___ outside the HSM boundary.', answer: 'plaintext', choices: ['plaintext', 'cleartext', 'raw form', 'unencrypted form'], hint: 'Unencrypted readable form', why: '"Plaintext" = 平文。秘密鍵はHSM境界外では平文として存在させないことが原則。' },
+  { sentence: 'CASP security policies are reviewed annually against JFSA guidelines and ___ standards.', answer: 'FISC', choices: ['FISC', 'ISO', 'NIST', 'CIS'], hint: 'Japan financial industry security standards body', why: '"FISC" = 金融情報システムセンター（Center for Financial Industry Information Systems）。日本金融機関のセキュリティ基準。' },
+  { sentence: 'Japan customer facing disclosures are reviewed by Japan legal counsel before ___ to ensure PSA compliance.', answer: 'publication', choices: ['publication', 'release', 'launch', 'delivery'], hint: 'Going live to customers', why: '"Publication" = 公開前。PSA広告規制準拠のため公開前に日本法律顧問がレビューする。' },
+
+  // ── BATCH 2: AML/CFT & TRAVEL RULE (13–24) ──────────────────
+  { sentence: 'Customer due diligence includes a ___ check to confirm the customer is physically present.', answer: 'liveness', choices: ['liveness', 'biometric', 'facial', 'presence'], hint: 'Confirms a real person, not a photo', why: '"Liveness" check = ライブネスチェック。なりすましを防ぐeKYCの重要コンポーネント。' },
+  { sentence: 'All customers are screened against OFAC, UN, and Japan ___ sanctions lists during onboarding.', answer: 'MOF', choices: ['MOF', 'METI', 'NPA', 'FSA'], hint: 'Japan Ministry of Finance', why: '"MOF" = 財務省。日本独自の制裁リストを管理する省庁の一つ。' },
+  { sentence: 'Unhosted wallet transfers are screened using ___ analytics to detect risk indicators.', answer: 'blockchain', choices: ['blockchain', 'transaction', 'on-chain', 'crypto'], hint: 'Analysis of distributed ledger data', why: '"Blockchain" analytics = ブロックチェーン分析。アンホステッドウォレットのリスク指標検出に使用するツール。' },
+  { sentence: 'STR non-___ decisions are documented with justification alongside filing decisions.', answer: 'filing', choices: ['filing', 'submission', 'reporting', 'escalation'], hint: 'When you decide not to submit', why: '"Non-filing" = 不提出決定。STRを提出しない判断も文書化が必要。' },
+  { sentence: 'Enhanced due diligence is applied to customers and transactions showing high ___ risk indicators.', answer: 'AML', choices: ['AML', 'fraud', 'credit', 'market'], hint: 'Anti-money laundering', why: '"AML" risk = AMLリスク。高リスク顧客・取引へのEDD適用を示す。' },
+  { sentence: 'VASP counterparties are screened for FATF ___ risk rating before Travel Rule data exchange.', answer: 'jurisdiction', choices: ['jurisdiction', 'country', 'geographic', 'location'], hint: 'Where the VASP is regulated', why: '"Jurisdiction" risk = 管轄リスク。相手先VASPの所在する規制管轄のFATFリスク評価。' },
+  { sentence: 'Travel Rule aggregation ___ captures cumulative transfers that exceed the threshold across multiple transactions.', answer: 'logic', choices: ['logic', 'rules', 'controls', 'filters'], hint: 'Programming that adds up related transactions', why: '"Logic" = 集計ロジック。単一取引ではなく累積で閾値を超えるケースをカバーする仕組み。' },
+  { sentence: 'High-risk customer decisions are documented in the customer ___ register reviewed at periodic account review.', answer: 'risk', choices: ['risk', 'AML', 'compliance', 'control'], hint: 'Tracks how risky each customer is', why: '"Risk" register = リスク台帳。高リスク顧客の決定根拠と定期見直しの記録を管理する。' },
+  { sentence: 'AML rule ___ are tracked in an exception register reviewed monthly by the compliance committee.', answer: 'exceptions', choices: ['exceptions', 'waivers', 'deviations', 'exclusions'], hint: 'Cases where normal rules are bypassed', why: '"Exceptions" = 例外。AMLルールの例外は台帳管理・月次コンプライアンス委員会レビューが必要。' },
+  { sentence: 'Withdrawal requests to ___ wallets are subject to blockchain analytics screening before processing.', answer: 'unhosted', choices: ['unhosted', 'external', 'self-custody', 'personal'], hint: 'Wallets not controlled by an exchange', why: '"Unhosted" wallets = アンホステッドウォレット（自己管理型）。出金前のスクリーニングが必要。' },
+  { sentence: 'Cross-border transfer of Japan customer KYC data requires a valid legal ___ under APPI.', answer: 'basis', choices: ['basis', 'justification', 'exemption', 'permission'], hint: 'Legal foundation for processing', why: '"Legal basis" = 適法根拠。APPIに基づくKYCデータの越境移転には適法根拠が必要。' },
+  { sentence: 'AML review findings are tracked in a ___ register with assigned owners and target remediation dates.', answer: 'remediation', choices: ['remediation', 'finding', 'compliance', 'audit'], hint: 'Used for fixing identified issues', why: '"Remediation" register = 是正台帳。AMLレビュー指摘事項の追跡・管理ツール。' },
+
+  // ── BATCH 3: TOKEN LISTING & PRODUCT LOCALIZATION (25–36) ──────────────────
+  { sentence: 'Before listing a new token, a Japan-specific ___ analysis determines if it qualifies as a security.', answer: 'FIEA', choices: ['FIEA', 'PSA', 'CASP', 'AML'], hint: 'Japan securities legislation', why: '"FIEA" = 金融商品取引法。トークンの有価証券該当性は金商法に基づいて判断する。' },
+  { sentence: 'Tokens are monitored on an ongoing basis through a ___ risk monitoring register.', answer: 'token', choices: ['token', 'asset', 'listing', 'product'], hint: 'Specific to listed crypto assets', why: '"Token" risk monitoring register = トークンリスク監視台帳。上場トークンの継続的リスク管理に使用する。' },
+  { sentence: 'Japan customer risk ___ documents must be reviewed by Japan legal counsel, not machine-translated.', answer: 'disclosure', choices: ['disclosure', 'notice', 'warning', 'information'], hint: 'Information given to customers about risks', why: '"Disclosure" = 開示文書。機械翻訳ではなく法律顧問が内容を確認した日本語版が必要。' },
+  { sentence: 'If a listed token faces ___ risk under FIEA, trading is suspended pending formal review.', answer: 'reclassification', choices: ['reclassification', 'delisting', 'suspension', 'review'], hint: 'Changed from one category to another', why: '"Reclassification" risk = 再分類リスク。有価証券への再分類リスクが生じた際の対応手順。' },
+  { sentence: 'All new DeFi product features for Japan must pass Japan ___ review before deployment.', answer: 'compliance', choices: ['compliance', 'legal', 'security', 'regulatory'], hint: 'Ensuring rules are followed', why: '"Compliance" review = コンプライアンス審査。日本向け新機能は日本のコンプライアンス審査が必要。' },
+  { sentence: 'Japan customer complaints are tracked with defined ___ timelines and reported quarterly to management.', answer: 'resolution', choices: ['resolution', 'response', 'handling', 'escalation'], hint: 'Getting the issue solved', why: '"Resolution" timelines = 解決期限。苦情処理の期限を定め四半期の管理報告に含める。' },
+  { sentence: 'Delisting decisions must include ___ rationale, regulatory considerations, and customer notification records.', answer: 'risk', choices: ['risk', 'business', 'legal', 'market'], hint: 'Why the risk was identified', why: '"Risk" rationale = リスク判断根拠。上場廃止決定はリスク理由・規制考慮・顧客通知記録を含む。' },
+  { sentence: 'Japan-specific PSA ___ regulations require pre-publication legal review of all customer communications.', answer: 'advertisement', choices: ['advertisement', 'marketing', 'disclosure', 'notice'], hint: 'Rules about how products are promoted', why: '"Advertisement" regulations = 広告規制。PSAの広告規制に基づく事前審査義務。' },
+  { sentence: 'Token listing review includes an AML risk assessment in addition to FIEA ___ analysis.', answer: 'securities', choices: ['securities', 'legal', 'regulatory', 'compliance'], hint: 'Determining if it falls under securities law', why: '"Securities" analysis = 有価証券該当性分析。FIEA上の有価証券該当性の確認。' },
+  { sentence: 'Japan exchange security KPIs include cold wallet ratio, AML alert ___ rate, and screening coverage.', answer: 'resolution', choices: ['resolution', 'closure', 'completion', 'processing'], hint: 'Rate at which alerts are dealt with', why: '"Resolution" rate = 解決率。AMLアラートの処理・解決率はJFSAに示す重要なKPI。' },
+  { sentence: 'Peer firm regulatory ___ actions are reviewed immediately to assess impact on our own token listings.', answer: 'enforcement', choices: ['enforcement', 'sanction', 'regulatory', 'disciplinary'], hint: 'When a regulator takes action', why: '"Enforcement" actions = 行政処分。他社への行政処分を受けて自社リスクを即時評価する。' },
+  { sentence: 'The Japan entity conducts an independent Japan-specific security ___ against JFSA and FISC requirements.', answer: 'assessment', choices: ['assessment', 'review', 'audit', 'evaluation'], hint: 'Formal risk evaluation', why: '"Assessment" = リスクアセスメント。日本独自のJFSA・FISC要件に基づく年次評価。' },
+
+  // ── BATCH 4: CUSTODY & COLD WALLET CONTROLS (37–48) ──────────────────
+  { sentence: 'Cold wallet storage requires ___ authentication with biometric verification for physical access.', answer: 'multi-factor', choices: ['multi-factor', 'two-factor', 'strong', 'enhanced'], hint: 'Multiple forms of verification', why: '"Multi-factor" = 多要素認証。コールドウォレット施設への物理アクセスに必要。' },
+  { sentence: 'Hot wallet signing operations require ___ authorization to prevent single-party key misuse.', answer: 'multi-party', choices: ['multi-party', 'dual', 'joint', 'shared'], hint: 'More than one person must approve', why: '"Multi-party" authorization = マルチパーティ承認。ホットウォレット署名の単一鍵リスクを防ぐ統制。' },
+  { sentence: 'HSM-based key management ensures private keys never exist in ___ outside secure hardware.', answer: 'plaintext', choices: ['plaintext', 'raw form', 'clear form', 'unencrypted form'], hint: 'Readable, unprotected text', why: '"Plaintext" = 平文。HSM外部での秘密鍵の平文存在を防ぐことが鍵管理の原則。' },
+  { sentence: 'Cold wallet ___ tests are conducted quarterly including balance reconciliation against blockchain records.', answer: 'integrity', choices: ['integrity', 'verification', 'validation', 'inspection'], hint: 'Checking that everything is intact', why: '"Integrity" tests = 整合性テスト。ブロックチェーン残高照合を含む四半期コールドウォレット検証。' },
+  { sentence: 'Customer asset ___ audit confirms that customer crypto is fully separated from proprietary exchange funds.', answer: 'segregation', choices: ['segregation', 'separation', 'isolation', 'protection'], hint: 'Formal division of assets', why: '"Segregation" audit = 分別監査。顧客資産と自社資産の完全分別を年次独立監査で確認する。' },
+  { sentence: 'A documented ___ fund exists to compensate Japan customers in the event of asset loss.', answer: 'reserve', choices: ['reserve', 'insurance', 'compensation', 'guarantee'], hint: 'Pre-set funds for emergencies', why: '"Reserve" fund = 補償準備金。顧客資産損失への備えとして文書化された資金。' },
+  { sentence: 'Cold wallet entry records are subject to ___ person access requirements during withdrawals.', answer: 'dual', choices: ['dual', 'two', 'multiple', 'joint'], hint: 'Two people must be present', why: '"Dual" person = 二人立ち合い。コールドウォレットからの出金時の不正防止統制。' },
+  { sentence: 'Japan customer private keys are held in cold storage under ___ entity control.', answer: 'Japan', choices: ['Japan', 'local', 'domestic', 'onshore'], hint: 'The Japan legal entity', why: '"Japan" entity control = 日本法人管理。顧客秘密鍵の管理責任は日本法人が持つことをJFSAに示す。' },
+  { sentence: 'The statutory minimum cold wallet ___ ratio must be maintained and independently audited.', answer: 'storage', choices: ['storage', 'custody', 'holding', 'retention'], hint: 'How much is kept offline', why: '"Storage" ratio = コールドウォレット保管比率。法定最低比率を維持し独立監査で確認する。' },
+  { sentence: 'DLP controls detect and block any attempt to extract raw key ___ from wallet management systems.', answer: 'material', choices: ['material', 'data', 'content', 'information'], hint: 'The actual key substance', why: '"Material" = 鍵素材。DLPによる鍵素材の不正抽出防止を示す。' },
+  { sentence: 'Smart contract ___ verification is performed after deployment to confirm bytecode integrity.', answer: 'on-chain', choices: ['on-chain', 'post-deployment', 'blockchain', 'ledger'], hint: 'Verification on the blockchain itself', why: '"On-chain" verification = オンチェーン検証。デプロイ後のバイトコード整合性確認をブロックチェーン上で実施。' },
+  { sentence: 'Hot wallet ___ simulation is included in Japan exchange DRP testing to validate failover capability.', answer: 'failover', choices: ['failover', 'recovery', 'backup', 'switchover'], hint: 'Switching to backup system automatically', why: '"Failover" simulation = フェイルオーバーシミュレーション。ホットウォレットの冗長切り替えをDRPテストに含める。' },
+
+  // ── BATCH 5: GOVERNANCE & CROSS-BORDER CONTROLS (49–60) ──────────────────
+  { sentence: 'Japan entity independence requires that security decision processes are ___ and demonstrable to the JFSA.', answer: 'documented', choices: ['documented', 'recorded', 'evidenced', 'written'], hint: 'Written down with proof', why: '"Documented" = 文書化された。日本法人の独立した意思決定プロセスの証拠をJFSAに示す。' },
+  { sentence: 'Cross-border sharing of Japan customer alert data requires APPI ___ and Japan CCO authority retention.', answer: 'compliance', choices: ['compliance', 'approval', 'assessment', 'review'], hint: 'Following the personal data law', why: '"Compliance" = 準拠。APPI適合と日本CCOのSTR権限保持を確認してから越境共有する。' },
+  { sentence: 'The three lines of ___ model governs security: business ownership, compliance oversight, internal audit assurance.', answer: 'defense', choices: ['defense', 'governance', 'control', 'protection'], hint: 'A governance framework', why: '"Defense" = 防衛線（防御）。金融機関のガバナンスフレームワーク「3線防衛モデル」。' },
+  { sentence: 'Global IRP adoption for Japan must verify that JFSA ___ timelines are explicitly included.', answer: 'reporting', choices: ['reporting', 'notification', 'escalation', 'disclosure'], hint: 'Regulatory communication deadlines', why: '"Reporting" timelines = 報告期限。JFSAへのインシデント報告期限がグローバルIRPに含まれているか確認する。' },
+  { sentence: 'Japan CASP risk ___ specifies zero tolerance for unauthorized customer asset loss.', answer: 'appetite', choices: ['appetite', 'tolerance', 'threshold', 'limit'], hint: 'Board-defined acceptable risk level', why: '"Appetite" = リスク選好度。取締役会が定める許容リスクレベル。顧客資産損失はゼロ許容。' },
+  { sentence: 'Security risks reported to Japan board include cold wallet ratio, AML metrics, and regulatory ___.', answer: 'findings', choices: ['findings', 'results', 'outcomes', 'observations'], hint: 'What regulators discovered', why: '"Findings" = 規制所見。JFSA検査で発見された事項を含む取締役会報告の必須項目。' },
+  { sentence: 'All HQ engineer access to Japan exchange systems requires Japan ___ approval before granting.', answer: 'CISO', choices: ['CISO', 'CCO', 'CTO', 'CEO'], hint: 'Japan security authority', why: '"CISO" = 日本CISO。本社エンジニアへの日本取引所システムアクセスは日本CISOが承認する。' },
+  { sentence: 'JFSA ___ right must be included in contracts with cloud providers for Japan exchange infrastructure.', answer: 'audit', choices: ['audit', 'inspection', 'review', 'assessment'], hint: 'Permission to check the provider', why: '"Audit" right = 監査権。JFSAが通じて日本取引所インフラのクラウドプロバイダーを検査できる権利。' },
+  { sentence: 'Japan CASP continuous improvement roadmap is driven by JFSA examination findings and ___ guidance updates.', answer: 'FATF', choices: ['FATF', 'FISC', 'IOSCO', 'BIS'], hint: 'Global AML/CFT standard setter', why: '"FATF" = 金融活動作業部会（Financial Action Task Force）。CASP向けのAML/CFT国際基準を策定。' },
+  { sentence: 'A social engineering attack on wallet operations staff is treated as a security ___ even if unsuccessful.', answer: 'incident', choices: ['incident', 'event', 'alert', 'threat'], hint: 'A formal security event requiring response', why: '"Incident" = インシデント。未遂でも正式なインシデント対応・報告が必要。' },
+  { sentence: 'Japan exchange open-source components are scanned for CVEs using ___ composition analysis.', answer: 'software', choices: ['software', 'dependency', 'code', 'library'], hint: 'Analysis of software components', why: '"Software" composition analysis (SCA) = ソフトウェア構成分析。OSSのCVEスキャンツール。' },
+  { sentence: 'The JFSA-aligned security monitoring framework must cover exchange-specific events including ___ operations.', answer: 'wallet', choices: ['wallet', 'trading', 'signing', 'custody'], hint: 'Crypto asset storage operations', why: '"Wallet" operations = ウォレット操作。JFSAの監視フレームワークは取引所固有のウォレット操作ログを含む。' },
+
+  // ── BATCH 6: INCIDENT RESPONSE & REGULATORY REPORTING (61–72) ──────────────────
+  { sentence: 'A material security incident affecting Japan customer assets must be reported to the JFSA within the ___ notification window.', answer: 'regulatory', choices: ['regulatory', 'statutory', 'legal', 'required'], hint: 'Set by law and regulation', why: '"Regulatory" notification window = 規制上の通知期限。JFSAへの重大インシデント報告期限。' },
+  { sentence: 'Incident response for Japan CASPs must include assessment of whether affected customer data triggers ___ notification obligations.', answer: 'APPI', choices: ['APPI', 'GDPR', 'PSA', 'FIEA'], hint: 'Japan personal data protection law', why: '"APPI" = 個人情報保護法（Act on Protection of Personal Information）。顧客データ漏洩時の通知義務を定める法律。' },
+  { sentence: 'Japan-specific IRP must include ___ contacts for escalation including police and NISC.', answer: 'local', choices: ['local', 'domestic', 'Japan', 'national'], hint: 'Within Japan', why: '"Local" contacts = ローカル（日本国内）の連絡先。警察・NISCへのエスカレーション経路をIRPに含める。' },
+  { sentence: 'A phishing attack targeting hot wallet operations staff requires a forensic review even if ___ was successful.', answer: 'no compromise', choices: ['no compromise', 'the attack failed', 'no breach occurred', 'no access was gained'], hint: 'Nothing was actually stolen', why: '"No compromise" = 被害なし。未遂でもフォレンジックレビューが必要なことを示す。' },
+  { sentence: 'Retrospective review of AML alert gaps must assess whether any ___ activity occurred during the gap period.', answer: 'suspicious', choices: ['suspicious', 'unusual', 'fraudulent', 'high-risk'], hint: 'Potentially illegal transactions', why: '"Suspicious" activity = 疑わしい活動。ログ欠落期間中のSTR対象取引の遡及確認が必要。' },
+  { sentence: 'Post-incident root ___ analysis must be completed and shared with the JFSA for material incidents.', answer: 'cause', choices: ['cause', 'reason', 'factor', 'source'], hint: 'The underlying origin of the problem', why: '"Cause" analysis = 根本原因分析。重大インシデントの根本原因はJFSAと共有が必要。' },
+  { sentence: 'Japan customer asset protection includes a documented ___ fund to cover losses from security incidents.', answer: 'reserve', choices: ['reserve', 'insurance', 'compensation', 'contingency'], hint: 'Money set aside in advance', why: '"Reserve" fund = 補償準備金。セキュリティインシデントによる顧客損失を補償するための事前積立金。' },
+  { sentence: 'JFSA incident reporting ___ must be tracked in a compliance calendar to ensure timely submission.', answer: 'deadlines', choices: ['deadlines', 'timelines', 'schedules', 'dates'], hint: 'Due dates that cannot be missed', why: '"Deadlines" = 期限。JFSA報告期限をコンプライアンスカレンダーで管理し遅延を防止する。' },
+  { sentence: 'Japan exchange DRP tests must include a ___ wallet failover simulation to validate custody resilience.', answer: 'hot', choices: ['hot', 'cold', 'warm', 'backup'], hint: 'The online operational wallet', why: '"Hot" wallet failover = ホットウォレットフェイルオーバー。DRPテストに含めるべき取引所固有のシナリオ。' },
+  { sentence: 'Security incident data shared cross-border must be reviewed against APPI and ___ data governance requirements.', answer: 'FISC', choices: ['FISC', 'JFSA', 'METI', 'MOF'], hint: 'Japan financial sector security guidelines', why: '"FISC" = 金融情報システムセンター。越境データ共有時に確認すべき金融機関向けデータガバナンス基準。' },
+  { sentence: 'Japan CASP security ___ roadmap is reviewed quarterly by Japan senior management for continuous improvement.', answer: 'improvement', choices: ['improvement', 'enhancement', 'development', 'maturity'], hint: 'Making things progressively better', why: '"Improvement" roadmap = 改善ロードマップ。JFSA・FATF・FISC改訂を反映した継続的セキュリティ向上計画。' },
+  { sentence: 'The Japan CISO presents a security ___ including crypto-specific KPIs to the Japan board quarterly.', answer: 'dashboard', choices: ['dashboard', 'report', 'briefing', 'summary'], hint: 'Visual overview of security status for executives', why: '"Dashboard" = セキュリティダッシュボード。コールドウォレット比率・AMLメトリクス等を含む四半期取締役会報告。' },
+
+  // ── BATCH 7: BLOCKCHAIN ANALYTICS & SCREENING (73–84) ──────────────────
+  { sentence: 'Blockchain analytics identifies exposure to ___, mixer services, and sanctioned entities.', answer: 'darknet', choices: ['darknet', 'dark web', 'illicit', 'criminal'], hint: 'Illegal online marketplaces', why: '"Darknet" = ダークネット市場。ブロックチェーン分析で検出すべき高リスク接触先の一つ。' },
+  { sentence: 'Japan-specific ___ and METI sanctions lists must be included in customer and wallet screening.', answer: 'MOF', choices: ['MOF', 'FSA', 'NPA', 'MHLW'], hint: 'Japan Ministry of Finance', why: '"MOF" = 財務省。日本独自の制裁リストを管理する省庁。グローバルツールに含まれない場合は追加必要。' },
+  { sentence: 'Counterparty VASP ___ includes licensing status, FATF risk, and sanctions exposure before Travel Rule data exchange.', answer: 'screening', choices: ['screening', 'assessment', 'review', 'evaluation'], hint: 'Checking for risks', why: '"Screening" = スクリーニング。相手先VASPのライセンス・FATFリスク・制裁審査を含む事前確認。' },
+  { sentence: 'Blockchain analytics ___ is performed during customer onboarding to detect exposure to high-risk addresses.', answer: 'screening', choices: ['screening', 'monitoring', 'checking', 'analysis'], hint: 'Initial check at account opening', why: '"Screening" = スクリーニング。オンボーディング時のウォレットアドレスリスク検出。' },
+  { sentence: 'AML alert resolution includes investigation, disposition decision, and documentation of both filing and ___ decisions.', answer: 'non-filing', choices: ['non-filing', 'rejection', 'dismissal', 'closure'], hint: 'When you decide not to file a report', why: '"Non-filing" = 不提出決定。STRを提出しない判断も文書化が必要。' },
+  { sentence: 'A blockchain analytics vendor losing ___ triggers immediate assessment of screening coverage impact.', answer: 'certification', choices: ['certification', 'license', 'accreditation', 'approval'], hint: 'Official recognized status from an authority', why: '"Certification" = 認定・認証。ブロックチェーン分析ベンダーの認証失効は即時対応が必要。' },
+  { sentence: 'High-risk unhosted wallet interactions trigger ___ due diligence before the transaction is processed.', answer: 'enhanced', choices: ['enhanced', 'additional', 'extra', 'further'], hint: 'Higher level of investigation', why: '"Enhanced" due diligence (EDD) = 強化デューデリジェンス。高リスクアンホステッドウォレットへの適用。' },
+  { sentence: 'Sanctioned wallet addresses are ___ and the blocking decision is documented for regulatory review.', answer: 'blocked', choices: ['blocked', 'rejected', 'denied', 'refused'], hint: 'Prevented from transacting', why: '"Blocked" = ブロック。制裁対象ウォレットへの取引遮断と決定記録が義務。' },
+  { sentence: 'Withdrawal destination wallets are screened to detect ___ market exposure before processing.', answer: 'darknet', choices: ['darknet', 'black market', 'illicit', 'underground'], hint: 'Illegal online marketplace', why: '"Darknet" market exposure = ダークネット市場関連リスク。出金前スクリーニングの主要検出対象。' },
+  { sentence: 'Travel Rule data transmission must include originator wallet address in addition to customer ___ information.', answer: 'identity', choices: ['identity', 'personal', 'KYC', 'account'], hint: 'Who the person is', why: '"Identity" information = 本人情報。トラベルルールでは顧客の本人情報とウォレットアドレスの両方が必要。' },
+  { sentence: 'AML transaction monitoring uses both ___ rules and AI-driven behavioral analytics.', answer: 'rule-based', choices: ['rule-based', 'threshold-based', 'pattern-based', 'criteria-based'], hint: 'Fixed conditions that trigger alerts', why: '"Rule-based" = ルールベース。固定条件のAMLアラートとAI行動分析を組み合わせる高度な監視体制。' },
+  { sentence: 'Japan CCO must retain final STR ___ authority even when HQ teams assist with AML investigations.', answer: 'filing', choices: ['filing', 'submission', 'reporting', 'escalation'], hint: 'The act of formally submitting to JAFIC', why: '"Filing" authority = 届出権限。JAFICへのSTR提出権限は日本CCOが保持する。HQ支援があっても同様。' },
+
+  // ── BATCH 8: RISK GOVERNANCE & BOARD REPORTING (85–96) ──────────────────
+  { sentence: 'Japan board security reports include crypto-specific KPIs: cold wallet ratio, AML alert rate, and ___ coverage.', answer: 'screening', choices: ['screening', 'monitoring', 'compliance', 'detection'], hint: 'How much of the activity is checked', why: '"Screening" coverage = スクリーニングカバレッジ。ブロックチェーン分析によるカバー率をKPIとして取締役会に報告。' },
+  { sentence: 'A Japan CASP\'s risk ___ statement must specify zero tolerance for unauthorized customer asset loss.', answer: 'appetite', choices: ['appetite', 'tolerance', 'framework', 'policy'], hint: 'Formal declaration of acceptable risk', why: '"Appetite" statement = リスク選好度表明。顧客資産の無断損失に対するゼロ許容を明示する取締役会承認文書。' },
+  { sentence: 'KRI ___ for cold wallet ratio or AML alert backlog require immediate escalation to the risk committee.', answer: 'breach', choices: ['breach', 'exceedance', 'violation', 'alert'], hint: 'When limits are exceeded', why: '"Breach" = 超過。コールドウォレット比率やAMLアラート積滞のKRI超過はリスク委員会への即時報告が必要。' },
+  { sentence: 'Security risks for the Japan exchange are formally reported to the Japan board on a ___ schedule.', answer: 'quarterly', choices: ['quarterly', 'monthly', 'annual', 'semi-annual'], hint: 'Every three months', why: '"Quarterly" = 四半期。JFSAが期待する日本取締役会へのセキュリティリスク定期報告頻度。' },
+  { sentence: 'Japan board members sign an annual ___ confirming they have reviewed the CASP security framework.', answer: 'attestation', choices: ['attestation', 'declaration', 'confirmation', 'acknowledgment'], hint: 'Formal signed statement', why: '"Attestation" = 証明・確認署名。取締役がCASPセキュリティフレームワークを確認したことの証跡。' },
+  { sentence: 'Security ___ such as MTTD and MTTR alongside cold wallet ratio are reported to the Japan board.', answer: 'metrics', choices: ['metrics', 'KPIs', 'indicators', 'data'], hint: 'Measurable performance data', why: '"Metrics" = セキュリティ指標。MTTD・MTTRと暗号資産固有のKPIを組み合わせた取締役会報告。' },
+  { sentence: 'The Japan CASP annual risk assessment must cover crypto-specific threats including ___ and smart contract risks.', answer: 'key theft', choices: ['key theft', 'hacking', 'cyber attack', 'wallet compromise'], hint: 'Stealing cryptographic keys', why: '"Key theft" = 鍵窃取リスク。暗号資産特有の主要脅威の一つとして年次リスクアセスメントに含める。' },
+  { sentence: 'Remediation of high-risk wallet security audit findings requires executive ___ and hard deadlines.', answer: 'sponsors', choices: ['sponsors', 'ownership', 'accountability', 'oversight'], hint: 'Senior leaders who champion the fix', why: '"Sponsors" = エグゼクティブスポンサー。高リスクウォレットセキュリティ指摘の是正を後援する上級管理職。' },
+  { sentence: 'The Japan CASP security improvement roadmap incorporates JFSA examination findings and ___ revision updates.', answer: 'FISC', choices: ['FISC', 'FATF', 'IOSCO', 'NIST'], hint: 'Japan financial sector security standards', why: '"FISC" = 金融情報システムセンター。FISC基準の改訂をセキュリティ改善ロードマップに反映させる。' },
+  { sentence: 'Japan CASP staffing risk is documented with compensating controls including ___ SOC support.', answer: '24/7', choices: ['24/7', 'external', 'third-party', 'outsourced'], hint: 'Around-the-clock monitoring', why: '"24/7" SOC = 24時間365日のSOC。人員不足の補完的統制として日本適格の外部SOCを活用する。' },
+  { sentence: 'The Japan CISO presents a ___ dashboard including cold wallet and AML KPIs to the Japan board quarterly.', answer: 'security', choices: ['security', 'risk', 'compliance', 'operational'], hint: 'The overall protection posture', why: '"Security" dashboard = セキュリティダッシュボード。コールドウォレット比率・AML指標を含む四半期取締役会報告ツール。' },
+  { sentence: 'Documentation gaps between stated controls and actual ___ are identified through a quarterly gap review.', answer: 'practice', choices: ['practice', 'operation', 'implementation', 'execution'], hint: 'What is actually done day to day', why: '"Practice" = 実践・実態。文書化された統制と実際の運用との乖離を四半期ギャップレビューで確認する。' },
+];
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let state = {
+  score: { correct: 0, wrong: 0 },
+  streak: 0, bestStreak: 0,
+  skillScores: { fsa: [0,0], evidence: [0,0], pressure: [0,0], governance: [0,0], crossborder: [0,0] },
+  flags: new Set(),
+  history: [],   // {id, correct}
+  quizQueue: [],
+  quizIdx: 0,
+  answered: false,
+  rpIdx: 0,
+  fillIdx: 0,
+  fillAnswered: false,
+};
+
+// load from localStorage
+try {
+  const saved = localStorage.getItem('fsa_state');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    state = { ...state, ...parsed, flags: new Set(parsed.flags || []) };
+  }
+} catch(e) {}
+
+function saveState() {
+  try {
+    const s = { ...state, flags: [...state.flags] };
+    localStorage.setItem('fsa_state', JSON.stringify(s));
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════
+// SPEECH
+// ═══════════════════════════════════════════════
+let voices = [], ttsActive = false, micActive = false;
+let recognition = null;
+let currentMicTarget = null;
+
+window.speechSynthesis.onvoiceschanged = loadVoices;
+loadVoices();
+
+function loadVoices() {
+  voices = window.speechSynthesis.getVoices();
+  const sel = document.getElementById('voice-select');
+  if (!sel || voices.length === 0) return;
+  sel.innerHTML = '';
+  const en = voices.filter(v => v.lang.startsWith('en'));
+  const rest = voices.filter(v => !v.lang.startsWith('en'));
+  [...en, ...rest].forEach(v => {
+    const o = document.createElement('option');
+    o.value = v.name;
+    o.textContent = `${v.name} (${v.lang})`;
+    if (v.lang === 'en-US' && !sel.value) o.selected = true;
+    sel.appendChild(o);
+  });
+}
+
+function speak(text, onEnd) {
+  window.speechSynthesis.cancel();
+  if (!text.trim()) return;
+  const utt = new SpeechSynthesisUtterance(text.replace(/["""]/g, ''));
+  const sel = document.getElementById('voice-select');
+  const chosen = sel && voices.find(v => v.name === sel.value);
+  if (chosen) utt.voice = chosen;
+  const rateEl = document.getElementById('set-rate');
+  utt.rate = rateEl ? parseFloat(rateEl.value) : 0.9;
+  utt.lang = 'en-US';
+  if (onEnd) utt.onend = onEnd;
+  window.speechSynthesis.speak(utt);
+}
+
+function toggleTTS() {
+  const btn = document.getElementById('btn-tts');
+  ttsActive = !ttsActive;
+  btn.classList.toggle('active', ttsActive);
+  btn.textContent = ttsActive ? '🔊 On' : '🔊 Read aloud';
+  if (ttsActive) speakCurrentQuestion();
+}
+
+function toggleFillTTS() {
+  const btn = document.getElementById('btn-fill-tts');
+  ttsActive = !ttsActive;
+  btn.classList.toggle('active', ttsActive);
+  if (ttsActive) {
+    const q = state.fillQueue ? state.fillQueue[state.fillIdx] : FILL_QUESTIONS[state.fillIdx];
+    if (q) speak(q.sentence.replace('___', 'blank'));
+  }
+}
+
+function speakCurrentQuestion() {
+  if (!ttsActive) return;
+  const q = state.quizQueue[state.quizIdx];
+  if (!q) return;
+  // MIXモード: fill問題は .sentence を使い、___ を "blank" に置換して読み上げ
+  const text = q._type === 'fill'
+    ? q.sentence.replace('___', '... blank')
+    : (q.context ? q.context + '. ' : '') + q.q;
+  speak(text);
+}
+
+function setupMic(transcriptEl, onResult) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    transcriptEl.textContent = 'Mic not supported in this browser';
+    return null;
+  }
+  const r = new SpeechRecognition();
+  r.lang = 'en-US';
+  r.continuous = false;
+  r.interimResults = true;
+  r.onresult = e => {
+    const t = Array.from(e.results).map(r => r[0].transcript).join('');
+    transcriptEl.textContent = t;
+    if (e.results[e.results.length-1].isFinal) onResult(t);
+  };
+  r.onerror = () => { transcriptEl.textContent = 'Mic error — try again'; };
+  return r;
+}
+
+function toggleMic() {
+  const btn = document.getElementById('btn-mic');
+  const transcript = document.getElementById('mic-transcript');
+  if (micActive) {
+    if (recognition) recognition.stop();
+    micActive = false;
+    btn.classList.remove('recording');
+    btn.textContent = '🎤 Speak answer';
+    return;
+  }
+  recognition = setupMic(transcript, (text) => {
+    micActive = false;
+    btn.classList.remove('recording');
+    btn.textContent = '🎤 Speak answer';
+    // match to option
+    const q = state.quizQueue[state.quizIdx];
+    if (!q || state.answered) return;
+    const t = text.toLowerCase();
+    let picked = -1;
+    q.opts.forEach((opt, i) => {
+      if (opt.toLowerCase().split(' ').filter(w => w.length > 4).some(w => t.includes(w))) picked = i;
+    });
+    if (picked >= 0) selectOption(picked);
+  });
+  if (recognition) {
+    recognition.start();
+    micActive = true;
+    btn.classList.add('recording');
+    btn.textContent = '🎤 Listening…';
+  }
+}
+
+function toggleFillMic() {
+  const btn = document.getElementById('btn-fill-mic');
+  const transcript = document.getElementById('fill-mic-transcript');
+  if (micActive) {
+    if (recognition) recognition.stop();
+    micActive = false;
+    btn.classList.remove('recording');
+    btn.textContent = '🎤 Speak answer';
+    return;
+  }
+  recognition = setupMic(transcript, (text) => {
+    // Match spoken word to a choice button
+    const q = state.fillQueue ? state.fillQueue[state.fillIdx] : FILL_QUESTIONS[state.fillIdx];
+    if (!q || state.fillAnswered) return;
+    const spoken = text.toLowerCase().trim();
+    const matched = q.choices.find(c => c.toLowerCase() === spoken || spoken.includes(c.toLowerCase()));
+    if (matched) {
+      const allBtns = document.getElementById('fill-options').querySelectorAll('.option-btn');
+      allBtns.forEach(btn => {
+        const label = btn.textContent.trim().slice(2).trim();
+        if (label.toLowerCase() === matched.toLowerCase()) btn.click();
+      });
+    }
+    micActive = false;
+    btn.classList.remove('recording');
+    btn.textContent = '🎤 Speak answer';
+  });
+  if (recognition) {
+    recognition.start();
+    micActive = true;
+    btn.classList.add('recording');
+    btn.textContent = '🎤 Listening…';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function switchScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.querySelector(`[data-screen="${name}"]`).classList.add('active');
+
+  if (name === 'quiz') showQuizMode();
+  if (name === 'fill') showFillMode();
+  if (name === 'dashboard') updateDashboard();
+}
+
+document.querySelectorAll('.tab-btn').forEach(b => {
+  b.addEventListener('click', () => switchScreen(b.dataset.screen));
+});
+
+// ═══════════════════════════════════════════════
+// QUIZ
+// ═══════════════════════════════════════════════
+
+// ── Session type + count selection ───────────
+let selectedQuizCount = 0;   // 0 = all
+let selectedType = 'quiz';   // 'quiz' | 'fill' | 'mix'
+
+function _refreshCountButtons() {
+  let total;
+  if (selectedType === 'quiz')      total = buildQueue().length;
+  else if (selectedType === 'fill') total = FILL_QUESTIONS.length;
+  else                               total = buildQueue().length + FILL_QUESTIONS.length;
+
+  document.getElementById('cnt-all-num').textContent = total;
+  document.getElementById('cnt-all-est').textContent = `all ${total} Qs`;
+
+  const btn5  = document.getElementById('cnt-5');
+  const btn10 = document.getElementById('cnt-10');
+  btn5.disabled  = total < 5;  btn5.style.opacity  = total < 5  ? '0.4' : '1';
+  btn10.disabled = total < 10; btn10.style.opacity = total < 10 ? '0.4' : '1';
+
+  // re-validate current selection
+  if (selectedQuizCount === 5  && total < 5)  selectQuizCount(0);
+  if (selectedQuizCount === 10 && total < 10) selectQuizCount(0);
+}
+
+function showSessionModal(presetType) {
+  // activate Quiz screen as backdrop
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-quiz').classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.screen === 'quiz');
+  });
+
+  selectType(presetType || selectedType || 'quiz', true);
+  _refreshCountButtons();
+  selectQuizCount(0);
+  document.getElementById('quiz-mode-overlay').classList.add('show');
+}
+
+// Kept for backward-compat with tab switch hooks
+function showQuizMode() { showSessionModal('quiz'); }
+function showFillMode()  { showSessionModal('fill'); }
+
+function selectType(t, skipRefresh) {
+  selectedType = t;
+  ['quiz','fill','mix'].forEach(id => {
+    const el = document.getElementById('type-' + id);
+    if (el) el.classList.toggle('active', id === t);
+  });
+  if (!skipRefresh) _refreshCountButtons();
+}
+
+function selectQuizCount(n) {
+  selectedQuizCount = n;
+  ['cnt-5','cnt-10','cnt-all'].forEach(id =>
+    document.getElementById(id).classList.remove('selected'));
+  if      (n === 5)  document.getElementById('cnt-5').classList.add('selected');
+  else if (n === 10) document.getElementById('cnt-10').classList.add('selected');
+  else               document.getElementById('cnt-all').classList.add('selected');
+
+  const label = n === 0 ? 'Start All →' : `Start ${n} Questions →`;
+  document.getElementById('quiz-mode-start-btn').textContent = label;
+}
+
+function closeQuizMode() {
+  document.getElementById('quiz-mode-overlay').classList.remove('show');
+}
+
+function startWithCount() {
+  closeQuizMode();
+  if (selectedType === 'mix') {
+    initMixed(selectedQuizCount);
+  } else if (selectedType === 'fill') {
+    // show fill screen
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-fill').classList.add('active');
+    document.querySelectorAll('.tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.screen === 'fill');
+    });
+    initFill(selectedQuizCount);
+  } else {
+    initQuiz(selectedQuizCount);
+  }
+}
+// ─────────────────────────────────────────────
+
+// ── Mixed Mode ────────────────────────────────
+function initMixed(count) {
+  // Build pool: quiz items tagged _type:'quiz', fill items tagged _type:'fill'
+  const quizPool = buildQueue().map(q => ({ ...q, _type: 'quiz' }));
+  const fillPool = [...FILL_QUESTIONS]
+    .sort(() => Math.random() - 0.5)
+    .map(q => ({ ...q, _type: 'fill' }));
+
+  // Interleave: merge & shuffle together
+  let combined = [...quizPool, ...fillPool].sort(() => Math.random() - 0.5);
+  if (count && count > 0 && combined.length > count) {
+    combined = combined.slice(0, count);
+  }
+
+  state.quizQueue   = combined;
+  state.quizIdx     = 0;
+  state.answered    = false;
+  state.sessionScore = { correct: 0, wrong: 0 };
+  renderMixedQuestion();
+}
+
+function renderMixedQuestion() {
+  const q = state.quizQueue[state.quizIdx];
+  if (!q) { showResult(); return; }
+
+  if (q._type === 'fill') {
+    renderMixedFill(q);
+  } else {
+    renderMixedQuiz(q);
+  }
+}
+
+// Render a fill-type card inside the Quiz screen
+function renderMixedFill(q) {
+  state.answered = false;
+  document.getElementById('btn-next-q').style.display = 'none';
+
+  // progress
+  document.getElementById('q-progress').textContent = `Q ${state.quizIdx + 1} / ${state.quizQueue.length}`;
+  document.getElementById('q-prog-fill').style.width = (state.quizIdx / state.quizQueue.length * 100) + '%';
+
+  // badge + diff
+  const badge = document.getElementById('q-cat-badge');
+  badge.textContent = 'FILL IN BLANK';
+  badge.className = 'cat-badge english';
+  document.getElementById('q-diff').innerHTML = '';  // no diff dots for fill
+
+  // card styling
+  document.getElementById('quiz-card').className = 'card english-card';
+  document.getElementById('q-inspector-label').textContent = 'Complete the phrase';
+  document.getElementById('q-context').style.display = 'none';
+
+  // render blank sentence as question text
+  const parts = q.sentence.split('___');
+  document.getElementById('q-text').innerHTML =
+    parts[0] + '<span class="blank">___</span>' + (parts[1] || '');
+
+  // flag
+  const flagBtn = document.getElementById('flag-btn');
+  const flagKey = 'fill-mixed-' + q.id;
+  flagBtn.classList.toggle('flagged', state.flags.has(flagKey));
+  flagBtn.textContent = state.flags.has(flagKey) ? '🚩' : '🏳';
+  flagBtn.onclick = () => {
+    if (state.flags.has(flagKey)) state.flags.delete(flagKey);
+    else state.flags.add(flagKey);
+    flagBtn.classList.toggle('flagged', state.flags.has(flagKey));
+    flagBtn.textContent = state.flags.has(flagKey) ? '🚩' : '🏳';
+    saveState();
+  };
+
+  // shuffle choices
+  const shuffled = [...q.choices].sort(() => Math.random() - 0.5);
+  const keys = ['A','B','C','D'];
+  const optsEl = document.getElementById('q-options');
+  optsEl.innerHTML = '';
+  shuffled.forEach((choice, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-key">${keys[i]}.</span><span>${choice}</span>`;
+    btn.onclick = () => selectMixedFillOption(choice, btn, q);
+    optsEl.appendChild(btn);
+  });
+
+  // feedback reset
+  document.getElementById('q-feedback').className = 'feedback';
+
+  const autoread = (document.getElementById('set-autoread') || {}).value;
+  if (autoread === '1' || ttsActive) speak(q.sentence.replace('___', '... blank'));
+  updateHeader();
+}
+
+function selectMixedFillOption(chosen, clickedBtn, q) {
+  if (state.answered) return;
+  state.answered = true;
+  const correct = chosen.toLowerCase() === q.answer.toLowerCase();
+
+  document.querySelectorAll('#q-options .option-btn').forEach(btn => {
+    btn.disabled = true;
+    const label = btn.querySelector('span:last-child').textContent.trim();
+    if (label.toLowerCase() === q.answer.toLowerCase()) btn.classList.add('selected-correct');
+  });
+  if (!correct) {
+    clickedBtn.classList.remove('selected-correct');
+    clickedBtn.classList.add('selected-wrong');
+  }
+
+  // scores
+  if (correct) {
+    state.score.correct++; state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    if (state.sessionScore) state.sessionScore.correct++;
+  } else {
+    state.score.wrong++; state.streak = 0;
+    if (state.sessionScore) state.sessionScore.wrong++;
+  }
+  state.history.push({ id: 'fill-' + q.id, correct });
+
+  // feedback
+  const fb = document.getElementById('q-feedback');
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  document.getElementById('fb-verdict').textContent = correct ? `✅ Correct: "${q.answer}"` : `✗ Answer: "${q.answer}"`;
+  document.getElementById('fb-why').textContent = q.why || '';
+  document.getElementById('fb-phrase').innerHTML =
+    `<div class="key-phrase-label">Key Phrase</div><div class="key-phrase-text">${q.sentence.replace('___', q.answer)}</div>`;
+
+  if (ttsActive) speak(q.sentence.replace('___', q.answer));
+  document.getElementById('btn-next-q').style.display = 'inline-block';
+  saveState(); updateHeader();
+}
+
+// Render a normal quiz-type card inside the Quiz screen (reuses renderQuestion)
+function renderMixedQuiz(q) {
+  // Restore flag button default handler
+  const flagBtn = document.getElementById('flag-btn');
+  flagBtn.onclick = () => toggleFlag();
+  renderQuestion();
+}
+
+// ─────────────────────────────────────────────
+function buildQueue() {
+  const mode = (document.getElementById('set-mode') || {}).value || 'all';
+  let pool = [...QUESTIONS];
+  if (mode === 'weak') pool = pool.filter(q => state.flags.has(q.id));
+  else if (mode === 'fsa') pool = pool.filter(q => q.tags.includes('fsa'));
+  else if (mode === 'english') pool = pool.filter(q => q.cat === 'english');
+  if (!pool.length) pool = [...QUESTIONS];
+  // shuffle
+  return pool.sort(() => Math.random() - 0.5);
+}
+
+function initQuiz(count) {
+  let queue = buildQueue();
+  // If count specified and pool is large enough, slice to that count
+  if (count && count > 0 && queue.length > count) {
+    queue = queue.slice(0, count);
+  }
+  state.quizQueue = queue;
+  state.quizIdx = 0;
+  state.answered = false;
+  // Reset session score for this quiz session
+  state.sessionScore = { correct: 0, wrong: 0 };
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = state.quizQueue[state.quizIdx];
+  if (!q) { showResult(); return; }
+
+  // Mixed mode: delegate fill-type items
+  if (q._type === 'fill') { renderMixedFill(q); return; }
+
+  state.answered = false;
+  document.getElementById('btn-next-q').style.display = 'none';
+
+  // Restore default flag handler
+  document.getElementById('flag-btn').onclick = () => toggleFlag();
+
+  // meta
+  const catMap = { fsa: 'fsa', pressure: 'pressure', english: 'english', evidence: 'fsa', 'cross-border': 'fsa' };
+  const badge = document.getElementById('q-cat-badge');
+  badge.textContent = q.cat.toUpperCase().replace('-', ' ');
+  badge.className = 'cat-badge ' + (catMap[q.cat] || 'fsa');
+
+  const dots = document.getElementById('q-diff');
+  dots.innerHTML = [1,2,3].map(i => `<div class="diff-dot ${i <= q.diff ? 'on' : ''}"></div>`).join('');
+
+  document.getElementById('q-progress').textContent = `Q ${state.quizIdx + 1} / ${state.quizQueue.length}`;
+  document.getElementById('q-prog-fill').style.width = (state.quizIdx / state.quizQueue.length * 100) + '%';
+
+  // card
+  const card = document.getElementById('quiz-card');
+  card.className = 'card' + (q.cat === 'pressure' ? ' pressure' : q.cat === 'english' ? ' english-card' : '');
+
+  document.getElementById('q-inspector-label').textContent = q.inspector;
+
+  const ctx = document.getElementById('q-context');
+  if (q.context) { ctx.style.display = 'block'; ctx.textContent = q.context; }
+  else ctx.style.display = 'none';
+
+  document.getElementById('q-text').textContent = q.q;
+
+  // flag btn
+  const flagBtn = document.getElementById('flag-btn');
+  flagBtn.classList.toggle('flagged', state.flags.has(q.id));
+  flagBtn.textContent = state.flags.has(q.id) ? '🚩' : '🏳';
+
+  // options
+  const opts = document.getElementById('q-options');
+  opts.innerHTML = '';
+  q.opts.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-key">${String.fromCharCode(65+i)}.</span><span>${opt}</span>`;
+    btn.onclick = () => selectOption(i);
+    opts.appendChild(btn);
+  });
+
+  // feedback reset
+  const fb = document.getElementById('q-feedback');
+  fb.className = 'feedback';
+
+  // auto-read
+  const autoread = (document.getElementById('set-autoread') || {}).value;
+  if (autoread === '1' || ttsActive) speakCurrentQuestion();
+
+  updateHeader();
+}
+
+function selectOption(idx) {
+  if (state.answered) return;
+  state.answered = true;
+
+  const q = state.quizQueue[state.quizIdx];
+  const correct = idx === q.correct;
+  const opts = document.querySelectorAll('.option-btn');
+
+  opts.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === idx && correct) btn.classList.add('selected-correct');
+    else if (i === idx && !correct) btn.classList.add('selected-wrong');
+    else if (i === q.correct) btn.classList.add('show-correct');
+  });
+
+  // update scores
+  if (correct) {
+    state.score.correct++;
+    state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+    if (state.sessionScore) state.sessionScore.correct++;
+  } else {
+    state.score.wrong++;
+    state.streak = 0;
+    if (state.sessionScore) state.sessionScore.wrong++;
+  }
+
+  // skill update
+  q.tags.forEach(tag => {
+    const map = { fsa:'fsa', evidence:'evidence', pressure:'pressure', governance:'governance', 'cross-border':'crossborder', english:'fsa' };
+    const key = map[tag];
+    if (key && state.skillScores[key]) {
+      state.skillScores[key][1]++;
+      if (correct) state.skillScores[key][0]++;
+    }
+  });
+
+  state.history.push({ id: q.id, correct });
+
+  // feedback
+  const fb = document.getElementById('q-feedback');
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  document.getElementById('fb-verdict').textContent = correct ? '✅ Correct' : '✗ Incorrect';
+  document.getElementById('fb-why').textContent = q.why;
+
+  const phrase = document.getElementById('fb-phrase');
+  phrase.innerHTML = `<div class="key-phrase-label">Key Phrase</div><div class="key-phrase-text">${q.phrase}</div>`;
+
+  const showJa = (document.getElementById('set-ja') || {}).value === '1';
+  if (showJa && q.jaHint) {
+    phrase.innerHTML += `<div style="margin-top:10px;font-size:11px;color:var(--ink3);">${q.jaHint}</div>`;
+  }
+
+  // speak feedback
+  if (ttsActive) speak((correct ? 'Correct. ' : 'Incorrect. ') + q.why);
+
+  document.getElementById('btn-next-q').style.display = 'inline-block';
+  saveState();
+  updateHeader();
+}
+
+function nextQuestion() {
+  state.quizIdx++;
+  if (state.quizIdx >= state.quizQueue.length) {
+    showResult();
+  } else {
+    renderQuestion();
+  }
+}
+
+function toggleFlag() {
+  const q = state.quizQueue[state.quizIdx];
+  if (!q) return;
+  if (state.flags.has(q.id)) state.flags.delete(q.id);
+  else state.flags.add(q.id);
+  const btn = document.getElementById('flag-btn');
+  btn.classList.toggle('flagged', state.flags.has(q.id));
+  btn.textContent = state.flags.has(q.id) ? '🚩' : '🏳';
+  saveState();
+}
+
+function showResult() {
+  // Use session score (questions in this quiz run only)
+  const sessionCorrect = state.sessionScore ? state.sessionScore.correct : state.score.correct;
+  const sessionWrong = state.sessionScore ? state.sessionScore.wrong : state.score.wrong;
+  const total = sessionCorrect + sessionWrong;
+  const pct = total ? Math.round(sessionCorrect / total * 100) : 0;
+  const grade = pct >= 90 ? 'A' : pct >= 75 ? 'B' : pct >= 60 ? 'C' : 'D';
+  document.getElementById('res-grade').textContent = grade;
+  document.getElementById('res-grade').style.color = pct >= 75 ? 'var(--green)' : pct >= 60 ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('res-label').textContent = `${pct}% — ${total} questions`;
+  document.getElementById('res-correct').textContent = sessionCorrect;
+  document.getElementById('res-wrong').textContent = sessionWrong;
+  document.getElementById('res-streak').textContent = state.bestStreak;
+  document.getElementById('res-level').textContent = getLevel();
+  document.getElementById('result-overlay').classList.add('show');
+}
+
+function closeResult() {
+  document.getElementById('result-overlay').classList.remove('show');
+  document.getElementById('result-overlay').dataset.mode = '';
+  document.getElementById('res-grade').style.fontSize = '';
+  switchScreen('dashboard');
+}
+
+function restartQuiz() {
+  const mode = document.getElementById('result-overlay').dataset.mode;
+  document.getElementById('result-overlay').classList.remove('show');
+  document.getElementById('result-overlay').dataset.mode = '';
+  document.getElementById('res-grade').style.fontSize = '';
+  if (mode === 'fill') {
+    showFillMode();
+  } else {
+    state.score = { correct: 0, wrong: 0 };
+    state.streak = 0;
+    showQuizMode();
+  }
+}
+
+// ═══════════════════════════════════════════════
+// FILL IN BLANK
+// ═══════════════════════════════════════════════
+function initFill(count) {
+  let queue = [...FILL_QUESTIONS].sort(() => Math.random() - 0.5);
+  if (count && count > 0 && queue.length > count) {
+    queue = queue.slice(0, count);
+  }
+  state.fillQueue = queue;
+  state.fillIdx = 0;
+  state.fillAnswered = false;
+  renderFill();
+}
+
+function renderFill() {
+  const queue = state.fillQueue || FILL_QUESTIONS;
+  const q = queue[state.fillIdx];
+  if (!q) { showFillResult(); return; }
+
+  state.fillAnswered = false;
+  const queueLen = queue.length;
+  document.getElementById('fill-progress').textContent = `${state.fillIdx + 1} / ${queueLen}`;
+  document.getElementById('fill-prog-fill').style.width = (state.fillIdx / queueLen * 100) + '%';
+
+  const parts = q.sentence.split('___');
+  document.getElementById('fill-text').innerHTML = parts[0] + '<span class="blank">___</span>' + (parts[1] || '');
+
+  document.getElementById('fill-feedback').className = 'feedback';
+  document.getElementById('btn-next-fill').style.display = 'none';
+
+  // Shuffle choices
+  const shuffled = [...q.choices].sort(() => Math.random() - 0.5);
+  const keys = ['A', 'B', 'C', 'D'];
+  const optionsEl = document.getElementById('fill-options');
+  optionsEl.innerHTML = '';
+  shuffled.forEach((choice, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-key">${keys[i]}</span> ${choice}`;
+    btn.onclick = () => checkFillChoice(choice, btn, shuffled);
+    optionsEl.appendChild(btn);
+  });
+
+  const flagBtn = document.getElementById('fill-flag-btn');
+  flagBtn.classList.toggle('flagged', state.flags.has('fill-' + state.fillIdx));
+  flagBtn.textContent = state.flags.has('fill-' + state.fillIdx) ? '🚩' : '🏳';
+}
+
+function checkFillChoice(chosen, clickedBtn, allChoices) {
+  if (state.fillAnswered) return;
+  const queue = state.fillQueue || FILL_QUESTIONS;
+  const q = queue[state.fillIdx];
+  const correct = chosen.toLowerCase() === q.answer.toLowerCase();
+
+  state.fillAnswered = true;
+
+  // Disable all buttons and highlight
+  const allBtns = document.getElementById('fill-options').querySelectorAll('.option-btn');
+  allBtns.forEach(btn => {
+    btn.disabled = true;
+    const label = btn.textContent.trim().slice(2).trim(); // remove key prefix
+    if (label.toLowerCase() === q.answer.toLowerCase()) {
+      btn.classList.add('selected-correct');
+    }
+  });
+  if (!correct) {
+    clickedBtn.classList.remove('selected-correct');
+    clickedBtn.classList.add('selected-wrong');
+  }
+
+  const fb = document.getElementById('fill-feedback');
+  fb.className = 'feedback show ' + (correct ? 'correct' : 'wrong');
+  document.getElementById('fill-fb-verdict').textContent = correct ? `✅ Correct: "${q.answer}"` : `✗ Answer: "${q.answer}"`;
+  document.getElementById('fill-fb-why').textContent = q.why;
+
+  if (ttsActive) speak(q.sentence.replace('___', q.answer));
+
+  document.getElementById('btn-next-fill').style.display = 'inline-block';
+}
+
+function checkFill() {
+  // kept for compatibility — no longer used with choice UI
+}
+
+function showFillHint() {
+  const q = (state.fillQueue || FILL_QUESTIONS)[state.fillIdx];
+  document.getElementById('fill-mic-transcript').textContent = `Hint: ${q.hint}`;
+}
+
+function nextFill() {
+  state.fillIdx++;
+  const queue = state.fillQueue || FILL_QUESTIONS;
+  if (state.fillIdx >= queue.length) {
+    showFillResult();
+  } else {
+    renderFill();
+  }
+}
+
+function showFillResult() {
+  // Reuse result overlay with fill-specific label
+  const total = (state.fillQueue || FILL_QUESTIONS).length;
+  document.getElementById('res-grade').textContent = '✓';
+  document.getElementById('res-grade').style.color = 'var(--green)';
+  document.getElementById('res-grade').style.fontSize = '56px';
+  document.getElementById('res-label').textContent = `Fill in Blank Complete — ${total} questions`;
+  document.getElementById('res-correct').textContent = total;
+  document.getElementById('res-wrong').textContent = '—';
+  document.getElementById('res-streak').textContent = state.bestStreak;
+  document.getElementById('res-level').textContent = getLevel();
+  // Override retry button for fill mode
+  const retryBtn = document.getElementById('fill-retry-btn');
+  if (retryBtn) retryBtn.style.display = 'inline-block';
+  document.getElementById('result-overlay').classList.add('show');
+  // Tag overlay so retry knows to go back to fill
+  document.getElementById('result-overlay').dataset.mode = 'fill';
+}
+
+function toggleFillFlag() {
+  const key = 'fill-' + state.fillIdx;
+  if (state.flags.has(key)) state.flags.delete(key);
+  else state.flags.add(key);
+  const btn = document.getElementById('fill-flag-btn');
+  btn.classList.toggle('flagged', state.flags.has(key));
+  btn.textContent = state.flags.has(key) ? '🚩' : '🏳';
+  saveState();
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function getLevel() {
+  const total = state.score.correct + state.score.wrong;
+  const pct = total ? state.score.correct / total : 0;
+  if (total < 5) return 'Beginner';
+  if (pct >= 0.9) return 'Expert';
+  if (pct >= 0.75) return 'Advanced';
+  if (pct >= 0.55) return 'Intermediate';
+  return 'Developing';
+}
+
+function updateDashboard() {
+  const total = state.score.correct + state.score.wrong;
+  document.getElementById('dash-correct').textContent = state.score.correct;
+  document.getElementById('dash-total').textContent = `of ${total} answered`;
+  document.getElementById('dash-streak').textContent = state.bestStreak;
+  const level = getLevel();
+  document.getElementById('dash-level').textContent = level;
+  document.getElementById('dash-next').textContent = total < 5 ? 'Answer 5+ questions to advance' : `${state.score.correct}/${total} correct (${total ? Math.round(state.score.correct/total*100) : 0}%)`;
+
+  // skill bars
+  const skills = [
+    ['fsa', 'bar-fsa', 'pct-fsa'],
+    ['governance', 'bar-gov', 'pct-gov'],
+    ['evidence', 'bar-ev', 'pct-ev'],
+    ['pressure', 'bar-pr', 'pct-pr'],
+    ['crossborder', 'bar-cb', 'pct-cb'],
+  ];
+  skills.forEach(([key, barId, pctId]) => {
+    const [c, t] = state.skillScores[key] || [0, 0];
+    const pct = t > 0 ? Math.round(c / t * 100) : 0;
+    document.getElementById(barId).style.width = pct + '%';
+    document.getElementById(pctId).textContent = pct + '%';
+  });
+
+  // weak list
+  const weakList = document.getElementById('weak-list');
+  if (state.flags.size === 0) {
+    weakList.innerHTML = '<div class="weak-item" style="color:var(--ink3);cursor:default">No items flagged yet. Flag difficult questions during quiz.</div>';
+  } else {
+    weakList.innerHTML = '';
+    state.flags.forEach(id => {
+      if (typeof id === 'string' && id.startsWith('fill-')) {
+        const idx = parseInt(id.split('-')[1]);
+        const q = FILL_QUESTIONS[idx];
+        if (!q) return;
+        const item = document.createElement('div');
+        item.className = 'weak-item';
+        item.innerHTML = `<span class="weak-badge">Fill</span><span class="weak-text">${q.sentence}</span>`;
+        item.onclick = () => { state.fillIdx = idx; switchScreen('fill'); renderFill(); };
+        weakList.appendChild(item);
+      } else {
+        const q = QUESTIONS.find(q => q.id === id);
+        if (!q) return;
+        const item = document.createElement('div');
+        item.className = 'weak-item';
+        item.innerHTML = `<span class="weak-badge">${q.cat}</span><span class="weak-text">${q.q}</span><span class="weak-cat">Diff ${'●'.repeat(q.diff)}</span>`;
+        item.onclick = () => { state.quizQueue = [q]; state.quizIdx = 0; switchScreen('quiz'); renderQuestion(); };
+        weakList.appendChild(item);
+      }
+    });
+  }
+}
+
+function updateHeader() {
+  const total = state.score.correct + state.score.wrong;
+  const pct = total ? Math.round(state.score.correct / total * 100) : '—';
+  document.getElementById('hdr-score').textContent = total ? pct + '%' : '—';
+  document.getElementById('hdr-streak').textContent = state.streak;
+  document.getElementById('hdr-level').textContent = getLevel();
+}
+
+function resetProgress() {
+  if (!confirm('Reset all progress?')) return;
+  state = {
+    score: { correct: 0, wrong: 0 }, streak: 0, bestStreak: 0,
+    skillScores: { fsa:[0,0], evidence:[0,0], pressure:[0,0], governance:[0,0], crossborder:[0,0] },
+    flags: new Set(), history: [], quizQueue: [], quizIdx: 0, answered: false, rpIdx: 0, fillIdx: 0, fillAnswered: false,
+  };
+  saveState();
+  updateDashboard();
+  updateHeader();
+}
+
+// ═══════════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════════
+const CREDENTIALS = [
+  { id: 'fsa', pw: 'moomoo2025' },
+  { id: 'admin', pw: 'fsatrain' },
+  { id: 'user', pw: 'pass1234' },
+];
+
+function doLogin() {
+  const id = document.getElementById('login-id').value.trim();
+  const pw = document.getElementById('login-pw').value;
+  const errorEl = document.getElementById('login-error');
+  const idEl = document.getElementById('login-id');
+  const pwEl = document.getElementById('login-pw');
+
+  const valid = CREDENTIALS.some(c => c.id === id && c.pw === pw);
+
+  if (valid) {
+    idEl.classList.remove('error');
+    pwEl.classList.remove('error');
+    errorEl.classList.remove('show');
+    const overlay = document.getElementById('login-overlay');
+    const app = document.getElementById('main-app');
+    overlay.classList.add('hidden');
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      app.style.display = 'flex';
+      updateDashboard();
+      updateHeader();
+      loadVoices();
+      setTimeout(loadVoices, 500);
+    }, 400);
+  } else {
+    idEl.classList.add('error');
+    pwEl.classList.add('error');
+    errorEl.classList.add('show');
+    pwEl.value = '';
+    pwEl.focus();
+  }
+}
+
+// Allow Enter key to submit
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-overlay') && !document.getElementById('login-overlay').classList.contains('hidden')) {
+    doLogin();
+  }
+});
+
+// Settings
+const rateEl = document.getElementById('set-rate');
+if (rateEl) {
+  rateEl.addEventListener('input', () => {
+    document.getElementById('set-rate-label').textContent = rateEl.value + '×';
+  });
+}
+
+// Fix scrollHeight bug in addMsg
+window.addEventListener('DOMContentLoaded', () => {
+  // App init is handled after login — see doLogin()
+  // Focus login input on load
+  const loginId = document.getElementById('login-id');
+  if (loginId) loginId.focus();
+});
+</script>
+</body>
+</html>
